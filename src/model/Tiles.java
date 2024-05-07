@@ -1,7 +1,5 @@
 package model;
 
-import ui.GamePanel;
-
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -10,27 +8,42 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-public class Tiles {
-    private Tile[] tiles;
-    private int mapTile[][];
-    private GamePanel gp;
+import static ui.GamePanel.*;
 
-    public Tiles(GamePanel gp) {
-        this.gp = gp;
-        tiles = new Tile[20]; // 20 is the number of different tiles we can have
-        mapTile = new int[gp.WORLD_MAXCOL][gp.WORLD_MAXROW];
-        setup(0, "yes");
-        setup(1, "no");
+public class Tiles {
+    private Tile[] listTiles;
+    private int mapTile[][];
+    private static Tiles tiles = new Tiles();
+
+    private Tiles() {
+        listTiles = new Tile[20]; // 20 is the number of different tiles we can have
+        mapTile = new int[WORLD_MAXCOL][WORLD_MAXROW];
+        setup(0, "yes", false);
+        setup(1, "no", false);
+        setup(2, "wall", true);
         loadMap("/map/world01.txt");
     }
 
-    public void setup(int index, String imageName) {
+    public static Tiles getInstance() {
+        return tiles;
+    }
+
+    public int[][] getMapTile() {
+        return mapTile;
+    }
+
+    public Tile[] getListTiles() {
+        return listTiles;
+    }
+
+    public void setup(int index, String imageName, boolean collision) {
 
         try {
-            tiles[index] = new Tile();
+            listTiles[index] = new Tile();
+            listTiles[index].hasCollision = collision;
             BufferedImage curImage = ImageIO.read(getClass().getResourceAsStream("/background/"
                     + imageName + ".png"));
-            tiles[index].tileImage = DrawingHelper.scaleImage(curImage, gp.TILESIZE, gp.TILESIZE);
+            listTiles[index].tileImage = Helper.scaleImage(curImage, TILESIZE, TILESIZE);
 
         } catch(IOException e) {
             e.printStackTrace();
@@ -45,11 +58,11 @@ public class Tiles {
             int col = 0;
             int row = 0;
 
-            while(col < gp.WORLD_MAXCOL && row < gp.WORLD_MAXROW) {
+            while (col < WORLD_MAXCOL && row < WORLD_MAXROW) {
 
                 String line = br.readLine();
 
-                while(col < gp.WORLD_MAXCOL) {
+                while (col < WORLD_MAXCOL) {
 
                     String numbers[] = line.split(" ");
 
@@ -59,7 +72,7 @@ public class Tiles {
                     col++;
 
                 }
-                if(col == gp.WORLD_MAXCOL) {
+                if (col == WORLD_MAXCOL) {
                     col = 0;
                     row++;
                 }
@@ -71,23 +84,22 @@ public class Tiles {
 
     public void draw(Graphics2D g2) {
 
-        Player player = Player.getInstance();
         int worldCol = 0;
         int worldRow = 0;
 
-        while (worldCol < gp.WORLD_MAXCOL && worldRow < gp.WORLD_MAXROW) {
+        while (worldCol < WORLD_MAXCOL && worldRow < WORLD_MAXROW) {
 
             int tileNum = mapTile[worldCol][worldRow];
 
-            int posX = worldCol * gp.TILESIZE;
-            int posY = worldRow * gp.TILESIZE;
+            int posX = worldCol * TILESIZE;
+            int posY = worldRow * TILESIZE;
 
-            DrawingHelper.draw(gp, g2, tiles[tileNum].tileImage, posX, posY);
+            Helper.draw(g2, listTiles[tileNum].tileImage, posX, posY);
 
             worldCol++;
 
 
-            if (worldCol == gp.WORLD_MAXCOL) {
+            if (worldCol == WORLD_MAXCOL) {
                 worldCol = 0;
                 worldRow++;
 

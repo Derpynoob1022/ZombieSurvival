@@ -1,25 +1,21 @@
 package ui;
 
-import model.KeyHandler;
-import model.Player;
-import model.Tiles;
-import model.Zombie;
+import model.*;
 
 import javax.swing.*;
 import java.awt.*;
 
 public class GamePanel extends JPanel implements Runnable {
-    public final int TILESIZE = 48;
-    public final int SCREEN_MAXROW = 12;
-    public final int SCREEN_MAXCOL = 16;
-    public final int SCREEN_WIDTH = TILESIZE * SCREEN_MAXCOL;
-    public final int SCREEN_HEIGHT = TILESIZE * SCREEN_MAXROW;
-    public final int WORLD_MAXROW = 100;
-    public final int WORLD_MAXCOL = 100;
-    private Zombie z = new Zombie(this);
+    public static final int TILESIZE = 48;
+    public static final int SCREEN_MAXROW = 12;
+    public static final int SCREEN_MAXCOL = 16;
+    public static final int SCREEN_WIDTH = TILESIZE * SCREEN_MAXCOL;
+    public static final int SCREEN_HEIGHT = TILESIZE * SCREEN_MAXROW;
+    public static final int WORLD_MAXROW = 100;
+    public static final int WORLD_MAXCOL = 100;
+    private Zombie z = new Zombie();
     private Thread GT;
-    private int FPS = 120;
-    private Tiles tiles = new Tiles(this);
+    private int FPS = 60;
 
     public GamePanel() {
         this.setPreferredSize(new Dimension(SCREEN_WIDTH, SCREEN_HEIGHT));
@@ -38,7 +34,6 @@ public class GamePanel extends JPanel implements Runnable {
     @Override
     public void run() {
 
-        Player.initialize(this);
         double delay = 1000000000/FPS;
         double nextStopTime = System.nanoTime() + delay;
 
@@ -74,12 +69,11 @@ public class GamePanel extends JPanel implements Runnable {
 
         Graphics2D g2 = (Graphics2D) g;
 
-        tiles.draw(g2);
+        Tiles.getInstance().draw(g2);
 
         Player.getInstance().draw(g2);
 
         z.draw(g2);
-
 
         g2.dispose();
     }

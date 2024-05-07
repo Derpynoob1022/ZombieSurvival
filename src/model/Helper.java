@@ -1,19 +1,19 @@
 package model;
 
-import ui.GamePanel;
-
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
-public class DrawingHelper {
+import static ui.GamePanel.TILESIZE;
 
-    public static void draw(GamePanel gp, Graphics2D g2, BufferedImage img, float posX, float posY) {
+public class Helper {
+
+    public static void draw(Graphics2D g2, BufferedImage img, float posX, float posY) {
         Player player = Player.getInstance();
 
-        if (posX + gp.TILESIZE > player.posX - player.screenX &&
-                posX - gp.TILESIZE < player.posX + player.screenX &&
-                posY + gp.TILESIZE > player.posY - player.screenY &&
-                posY - gp.TILESIZE < player.posY + player.screenY) {
+        if (posX + 2 * TILESIZE > player.posX - player.screenX &&
+                posX - 2 * TILESIZE < player.posX + player.screenX &&
+                posY + 2 * TILESIZE > player.posY - player.screenY &&
+                posY - 2 * TILESIZE < player.posY + player.screenY) {
 
             float screenX = posX - player.posX + player.screenX;
             float screenY = posY - player.posY + player.screenY;
