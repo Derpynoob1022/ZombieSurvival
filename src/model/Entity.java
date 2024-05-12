@@ -8,8 +8,13 @@ public abstract class Entity {
     protected int velX;
     protected int velY;
     protected int moveSpeed;
-    public boolean collide;
+    protected boolean collideLeft;
+    protected boolean collideRight;
+    protected boolean collideUp;
+    protected boolean collideDown;
     protected Rectangle hitBox;
+    protected int health;
+
 
     public abstract void draw(Graphics2D g2);
 
@@ -34,4 +39,5 @@ public abstract class Entity {
     public int getMoveSpeed() {
         return moveSpeed;
     }
+
 }

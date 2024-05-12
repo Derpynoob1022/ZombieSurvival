@@ -6,14 +6,14 @@ import javax.swing.*;
 import java.awt.*;
 
 public class GamePanel extends JPanel implements Runnable {
-    public static final int TILESIZE = 48;
+    public static final int TILESIZE = 72;
     public static final int SCREEN_MAXROW = 12;
     public static final int SCREEN_MAXCOL = 16;
     public static final int SCREEN_WIDTH = TILESIZE * SCREEN_MAXCOL;
     public static final int SCREEN_HEIGHT = TILESIZE * SCREEN_MAXROW;
     public static final int WORLD_MAXROW = 100;
     public static final int WORLD_MAXCOL = 100;
-    private Zombie z = new Zombie();
+    public static Entity[] MONSTERS;
     private Thread GT;
     private int FPS = 60;
 
@@ -23,6 +23,7 @@ public class GamePanel extends JPanel implements Runnable {
         this.setDoubleBuffered(true);
         this.setFocusable(true);
         this.addKeyListener(KeyHandler.getInstance());
+        setup();
         this.GameThread();
     }
 
@@ -59,9 +60,18 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
 
+    private void setup() {
+        MONSTERS = new Entity[2];
+        for (int i = 0; i < MONSTERS.length; i++) {
+            MONSTERS[i] = new Zombie((i+6) *TILESIZE, 2 * TILESIZE);
+        }
+    }
+
     public void update() {
         Player.getInstance().update();
-        z.update();
+        for (Entity e : MONSTERS) {
+            e.update();
+        }
     }
 
     public void paintComponent(Graphics g) {
@@ -73,7 +83,9 @@ public class GamePanel extends JPanel implements Runnable {
 
         Player.getInstance().draw(g2);
 
-        z.draw(g2);
+        for (Entity e : MONSTERS) {
+            e.draw(g2);
+        }
 
         g2.dispose();
     }
