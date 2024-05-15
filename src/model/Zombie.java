@@ -5,8 +5,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
-import static ui.GamePanel.MONSTERS;
-import static ui.GamePanel.TILESIZE;
+import static ui.GamePanel.*;
 
 public class Zombie extends Enemy {
     public Zombie(int x, int y) {
@@ -50,7 +49,7 @@ public class Zombie extends Enemy {
             collideUp = false;
             collideDown = false;
 
-            CollisionChecker.getInstance().checkEntityCollision(this, MONSTERS);
+            CollisionChecker.getInstance().checkEntityCollision(this, ENTITIES);
             CollisionChecker.getInstance().checkPlayerCollision(this);
             // CollisionChecker.getInstance().CheckTile(this);
 

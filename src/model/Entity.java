@@ -12,6 +12,7 @@ public abstract class Entity {
     protected boolean collideRight;
     protected boolean collideUp;
     protected boolean collideDown;
+    protected boolean stable = true;
     protected Rectangle hitBox;
     protected int health;
 

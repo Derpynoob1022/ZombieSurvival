@@ -14,6 +14,7 @@ public class GamePanel extends JPanel implements Runnable {
     public static final int WORLD_MAXROW = 100;
     public static final int WORLD_MAXCOL = 100;
     public static Entity[] MONSTERS;
+    public static Entity[] ENTITIES;
     private Thread GT;
     private int FPS = 60;
 
@@ -61,17 +62,15 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     private void setup() {
-        MONSTERS = new Entity[2];
-        for (int i = 0; i < MONSTERS.length; i++) {
-            MONSTERS[i] = new Zombie((i+6) *TILESIZE, 2 * TILESIZE);
+        ENTITIES = new Entity[3];
+        for (int i = 0; i < ENTITIES.length - 1; i++) {
+            ENTITIES[i] = new Zombie((i+6) *TILESIZE, 2 * TILESIZE);
         }
+        ENTITIES[2] = Player.getInstance();
     }
 
     public void update() {
-        Player.getInstance().update();
-        for (Entity e : MONSTERS) {
-            e.update();
-        }
+        UpdateHelper.update();
     }
 
     public void paintComponent(Graphics g) {
@@ -81,9 +80,7 @@ public class GamePanel extends JPanel implements Runnable {
 
         Tiles.getInstance().draw(g2);
 
-        Player.getInstance().draw(g2);
-
-        for (Entity e : MONSTERS) {
+        for (Entity e : ENTITIES) {
             e.draw(g2);
         }
 

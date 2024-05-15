@@ -73,7 +73,7 @@ public class Player extends Entity {
         collideDown = false;
 
         // Check if player hits an entity
-        int indexEntityCollision = CollisionChecker.getInstance().checkEntityCollision(this, MONSTERS);
+        int indexEntityCollision = CollisionChecker.getInstance().checkEntityCollision(this, ENTITIES);
         handleMonsterCollision(indexEntityCollision);
         // Check if player runs into a wall
         // CollisionChecker.getInstance().CheckTile(this);
@@ -105,8 +105,8 @@ public class Player extends Entity {
 //        System.out.println(collideLeft);
 //        System.out.println(collideRight);
 
-            System.out.println(this.hashCode() + " " + velX + " " + velY + " " + collideUp + " " + collideDown + " "
-             + collideLeft + " " + collideRight);
+//            System.out.println(this.hashCode() + " " + velX + " " + velY + " " + collideUp + " " + collideDown + " "
+//             + collideLeft + " " + collideRight);
 
     }
 
