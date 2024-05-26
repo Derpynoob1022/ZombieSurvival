@@ -7,7 +7,7 @@ import static ui.GamePanel.TILESIZE;
 
 public class Helper {
 
-    public static void draw(Graphics2D g2, BufferedImage img, float posX, float posY) {
+    public static void draw(Graphics2D g2, BufferedImage img, int posX, int posY) {
         Player player = Player.getInstance();
 
         if (posX + 2 * TILESIZE > player.posX - player.screenX &&
@@ -15,10 +15,10 @@ public class Helper {
                 posY + 2 * TILESIZE > player.posY - player.screenY &&
                 posY - 2 * TILESIZE < player.posY + player.screenY) {
 
-            float screenX = posX - player.posX + player.screenX;
-            float screenY = posY - player.posY + player.screenY;
+            int screenX = posX - player.posX + player.screenX;
+            int screenY = posY - player.posY + player.screenY;
 
-            g2.drawImage(img, (int) screenX, (int) screenY, null);
+            g2.drawImage(img, screenX, screenY, null);
         }
     }
 

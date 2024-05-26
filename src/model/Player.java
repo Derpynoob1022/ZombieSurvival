@@ -9,6 +9,9 @@ public class Player extends Entity {
     public final int screenX;
     public final int screenY;
     private static Player player = new Player();
+    public Shape attackArea = new Rectangle(0, 0, 0, 0);
+    public boolean attackCD;
+    public int attackCDCount;
 
     private Player() {
         posX = 0;
@@ -16,19 +19,14 @@ public class Player extends Entity {
         moveSpeed = 6;
         screenX = SCREEN_WIDTH/2 - TILESIZE/2;
         screenY = SCREEN_HEIGHT/2 - TILESIZE/2;
-        health = 5;
+        maxHealth = 100;
+        health = 100;
 
         hitBox = new Rectangle();
-//        hitBox.x = 8;
-//        hitBox.y = 16;
-//        hitBox.width = 32;
-//        hitBox.height = 32;
-
-
-        hitBox.x = 0;
-        hitBox.y = 0;
-        hitBox.width = TILESIZE;
-        hitBox.height = TILESIZE;
+        hitBox.x = 12;
+        hitBox.y = 12;
+        hitBox.width = 48;
+        hitBox.height = 48;
     }
 
     public static Player getInstance() {
@@ -42,6 +40,7 @@ public class Player extends Entity {
         boolean keyPressedA = KeyHandler.getInstance().isKeyPressed(KeyEvent.VK_A);
         boolean keyPressedS = KeyHandler.getInstance().isKeyPressed(KeyEvent.VK_S);
         boolean keyPressedD = KeyHandler.getInstance().isKeyPressed(KeyEvent.VK_D);
+        boolean clicked = MouseHandler.getInstance().pressed;
 
         velX = 0;
         velY = 0;
@@ -67,47 +66,34 @@ public class Player extends Entity {
             velY = (int) Math.round(normalizedVelY * moveSpeed);
         }
 
-        collideLeft = false;
-        collideRight = false;
-        collideUp = false;
-        collideDown = false;
+        collision = false;
+        CollisionChecker.getInstance().checkEntityCollision(this, ENTITIES);
 
-        // Check if player hits an entity
-        int indexEntityCollision = CollisionChecker.getInstance().checkEntityCollision(this, ENTITIES);
-        handleMonsterCollision(indexEntityCollision);
-        // Check if player runs into a wall
-        // CollisionChecker.getInstance().CheckTile(this);
+        posX += velX;
+        posY += velY;
 
-        if (!collideLeft && !collideRight) {
-            // No horizontal collisions detected, move by velX
-            posX += velX;
-        } else if (collideLeft && velX > 0) {
-            // Colliding on the left, but moving right
-            posX += velX;
-        } else if (collideRight && velX < 0) {
-            // Colliding on the right, but moving left
-            posX += velX;
+        if (invincible == true) {
+            iFrames++;
+            if (iFrames > 60) {
+                invincible = false;
+                iFrames = 0;
+            }
         }
 
-        if (!collideUp && !collideDown) {
-            // No vertical collisions detected, move by velY
-            posY += velY;
-        } else if (collideUp && velY > 0) {
-            // Colliding on the top, but moving down
-            posY += velY;
-        } else if (collideDown && velY < 0) {
-            // Colliding on the bottom, but moving up
-            posY += velY;
+        if (attackCD) {
+            attackArea = null;
+        } else if (clicked) {
+            attack();
         }
 
-//        System.out.println(collideUp);
-//        System.out.println(collideDown);
-//        System.out.println(collideLeft);
-//        System.out.println(collideRight);
 
-//            System.out.println(this.hashCode() + " " + velX + " " + velY + " " + collideUp + " " + collideDown + " "
-//             + collideLeft + " " + collideRight);
-
+        if (attackCD == true) {
+            attackCDCount++;
+            if (attackCDCount > 60) {
+                attackCD = false;
+                attackCDCount = 0;
+            }
+        }
     }
 
 
@@ -117,12 +103,21 @@ public class Player extends Entity {
 
         g2.setColor(Color.RED);
         g2.fillRect(screenX + hitBox.x, screenY + hitBox.y, hitBox.width, hitBox.height);
+
+        g2.setColor(Color.BLUE);
+        g2.draw(attackArea);
     }
 
-    public void handleMonsterCollision(int index) {
-        if (index != -1) {
-            health -= 1;
-            // System.out.println("Health: " + health);
+    public void attack() {
+        double angle = Math.atan2(MouseHandler.getInstance().y - SCREEN_HEIGHT / 2, MouseHandler.getInstance().x - SCREEN_WIDTH / 2);
+        attackArea = new AttackShape(posX + TILESIZE / 2, posY + TILESIZE / 2, TILESIZE * 2, TILESIZE, angle);
+
+        for (int i : CollisionChecker.getInstance().checkAttackCollision(attackArea, ENTITIES)) {
+            Entity curEntity = ENTITIES.get(i);
+            if (!curEntity.invincible) {
+                curEntity.hit();
+                curEntity.invincible = true;
+            }
         }
     }
 }

@@ -15,16 +15,44 @@ public class Zombie extends Enemy {
 
         hitBox = new Rectangle();
 
-        hitBox.x = 0;
-        hitBox.y = 0;
-        hitBox.width = TILESIZE;
-        hitBox.height = TILESIZE;
+        hitBox.x = 12;
+        hitBox.y = 24;
+        hitBox.width = 48;
+        hitBox.height = 48;
+
+        health = 5;
+        maxHealth = 5;
     }
 
     public void draw(Graphics2D g2) {
         try {
             BufferedImage curImage = ImageIO.read(getClass().getResourceAsStream("/enemy/zombie/zombie0.png"));
-            Helper.draw(g2, Helper.scaleImage(curImage, TILESIZE, TILESIZE), posX, posY);
+            Player player = Player.getInstance();
+
+            if (posX + 2 * TILESIZE > player.posX - player.screenX &&
+                    posX - 2 * TILESIZE < player.posX + player.screenX &&
+                    posY + 2 * TILESIZE > player.posY - player.screenY &&
+                    posY - 2 * TILESIZE < player.posY + player.screenY) {
+
+                int screenX = posX - player.posX + player.screenX;
+                int screenY = posY - player.posY + player.screenY;
+
+                int screenXHealth = screenX;
+                int screenYHealth = screenY - 10;
+                int healthLeft = TILESIZE * health / maxHealth;
+
+                g2.setColor(Color.red);
+                g2.fillRect(screenXHealth, screenYHealth, TILESIZE, 5);
+
+                if (health > 0) {
+
+                    g2.setColor(Color.GREEN);
+                    g2.fillRect(screenXHealth, screenYHealth, healthLeft, 5);
+                }
+
+                g2.drawImage(Helper.scaleImage(curImage, TILESIZE, TILESIZE), screenX, screenY, null);
+            }
+
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -44,39 +72,36 @@ public class Zombie extends Enemy {
             velY = (int) Math.round(distY / distance * moveSpeed);
 
 
-            collideLeft = false;
-            collideRight = false;
-            collideUp = false;
-            collideDown = false;
+            collision = false;
 
-            CollisionChecker.getInstance().checkEntityCollision(this, ENTITIES);
-            CollisionChecker.getInstance().checkPlayerCollision(this);
-            // CollisionChecker.getInstance().CheckTile(this);
+            int collisionIndex = CollisionChecker.getInstance().checkEntityCollision(this, ENTITIES);
+            handlePlayerCollision(collisionIndex);
+//            CollisionChecker.getInstance().CheckTile(this);
 
-            if (!collideLeft && !collideRight) {
-                // No horizontal collisions detected, move by velX
-                posX += velX;
-            } else if (collideLeft && velX > 0) {
-                // Colliding on the left, but moving right
-                posX += velX;
-            } else if (collideRight && velX < 0) {
-                // Colliding on the right, but moving left
-                posX += velX;
+            posX += velX;
+            posY += velY;
+
+
+            if (invincible == true) {
+                iFrames++;
+                if (iFrames > 60) {
+                    invincible = false;
+                    iFrames = 0;
+                }
             }
-
-            if (!collideUp && !collideDown) {
-                // No vertical collisions detected, move by velY
-                posY += velY;
-            } else if (collideUp && velY > 0) {
-                // Colliding on the top, but moving down
-                posY += velY;
-            } else if (collideDown && velY < 0) {
-                // Colliding on the bottom, but moving up
-                posY += velY;
-            }
-
 //             System.out.println(this.hashCode() + " " + velX + " " + velY + " " + collideUp + " " + collideDown + " "
 //             + collideLeft + " " + collideRight);
+        }
+    }
+
+    public void handlePlayerCollision(int index) {
+        if (index != -1) {
+            if (ENTITIES.get(index) instanceof Player) {
+                if (!Player.getInstance().invincible) {
+                    Player.getInstance().health -= 1;
+                    Player.getInstance().invincible = true;
+                }
+            }
         }
     }
 }

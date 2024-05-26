@@ -4,6 +4,8 @@ import model.*;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 public class GamePanel extends JPanel implements Runnable {
     public static final int TILESIZE = 72;
@@ -13,10 +15,10 @@ public class GamePanel extends JPanel implements Runnable {
     public static final int SCREEN_HEIGHT = TILESIZE * SCREEN_MAXROW;
     public static final int WORLD_MAXROW = 100;
     public static final int WORLD_MAXCOL = 100;
-    public static Entity[] MONSTERS;
-    public static Entity[] ENTITIES;
+    public static ArrayList<Entity> ENTITIES;
     private Thread GT;
     private int FPS = 60;
+    private Ui ui = new Ui();
 
     public GamePanel() {
         this.setPreferredSize(new Dimension(SCREEN_WIDTH, SCREEN_HEIGHT));
@@ -26,6 +28,8 @@ public class GamePanel extends JPanel implements Runnable {
         this.addKeyListener(KeyHandler.getInstance());
         setup();
         this.GameThread();
+        this.addMouseListener(MouseHandler.getInstance());
+        this.addMouseMotionListener(MouseHandler.getInstance());
     }
 
     private void GameThread() {
@@ -62,21 +66,34 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     private void setup() {
-        ENTITIES = new Entity[3];
-        for (int i = 0; i < ENTITIES.length - 1; i++) {
-            ENTITIES[i] = new Zombie((i+6) *TILESIZE, 2 * TILESIZE);
+        ENTITIES = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            ENTITIES.add(new Zombie((i + 6) *TILESIZE, 2 * TILESIZE));
         }
-        ENTITIES[2] = Player.getInstance();
+        ENTITIES.add(Player.getInstance());
     }
 
     public void update() {
-        UpdateHelper.update();
+        for (Entity e : ENTITIES) {
+            e.update();
+        }
+
+        Iterator<Entity> iterator = ENTITIES.iterator();
+        while (iterator.hasNext()) {
+            Entity e = iterator.next();
+            if (e.getHealth() == 0) {
+                iterator.remove();
+            }
+        }
+
     }
 
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
         Graphics2D g2 = (Graphics2D) g;
+
+        ui.draw(g2);
 
         Tiles.getInstance().draw(g2);
 
