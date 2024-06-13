@@ -8,54 +8,56 @@ import java.io.IOException;
 import static ui.GamePanel.*;
 
 public class Zombie extends Enemy {
+    private Helper helper = new Helper();
+
     public Zombie(int x, int y) {
         posX = x;
         posY = y;
         moveSpeed = 3;
 
-        hitBox = new Rectangle();
-
-        hitBox.x = 12;
-        hitBox.y = 24;
-        hitBox.width = 48;
-        hitBox.height = 48;
+        hitBox = new Rectangle(12, 24, 48, 48);
 
         health = 5;
         maxHealth = 5;
     }
 
-    public void draw(Graphics2D g2) {
+    public void draw (Graphics2D g2) {
         try {
-            BufferedImage curImage = ImageIO.read(getClass().getResourceAsStream("/enemy/zombie/zombie0.png"));
-            Player player = Player.getInstance();
+            BufferedImage scaledImage = Helper.scaleImage(ImageIO.read(getClass().getResourceAsStream("/enemy/zombie/zombie0.png")), TILESIZE, TILESIZE);
 
-            if (posX + 2 * TILESIZE > player.posX - player.screenX &&
-                    posX - 2 * TILESIZE < player.posX + player.screenX &&
-                    posY + 2 * TILESIZE > player.posY - player.screenY &&
-                    posY - 2 * TILESIZE < player.posY + player.screenY) {
+            Helper.draw(g2, scaledImage, posX, posY);
 
-                int screenX = posX - player.posX + player.screenX;
-                int screenY = posY - player.posY + player.screenY;
+            int posXHealth = posX;
+            int posYHealth = posY - 10;
+            int healthLeft = TILESIZE * health / maxHealth;
 
-                int screenXHealth = screenX;
-                int screenYHealth = screenY - 10;
-                int healthLeft = TILESIZE * health / maxHealth;
+            Helper.draw(g2, Color.red, posXHealth, posYHealth, TILESIZE, 5);
 
-                g2.setColor(Color.red);
-                g2.fillRect(screenXHealth, screenYHealth, TILESIZE, 5);
-
-                if (health > 0) {
-
-                    g2.setColor(Color.GREEN);
-                    g2.fillRect(screenXHealth, screenYHealth, healthLeft, 5);
-                }
-
-                g2.drawImage(Helper.scaleImage(curImage, TILESIZE, TILESIZE), screenX, screenY, null);
+            if (health > 0) {
+                Helper.draw(g2, Color.green, posXHealth, posYHealth, healthLeft, 5);
             }
-
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public void dropLoot() {
+        int variantX = (int) (Math.random() * TILESIZE);
+        int variantY = (int) (Math.random() * TILESIZE);
+        DROPPED_ITEMS.add(new Coin(posX + variantX, posY + variantY));
+
+        // between 1 and 60
+        int chance = (int) Math.floor(Math.random() * 60) + 1;
+
+        // 50% chance of dropping a sword
+        if (chance > 30) {
+            variantX = (int) (Math.random() * TILESIZE);
+            variantY = (int) (Math.random() * TILESIZE);
+            DROPPED_ITEMS.add(new GoldenSword(posX + variantX, posY + variantY));
+            System.out.println("goldgoldgold");
+        }
+        // System.out.println("Dropped loot");
     }
 
     @Override
@@ -66,32 +68,27 @@ public class Zombie extends Enemy {
 
         double distance = Math.sqrt(distX * distX + distY * distY);
 
-        if (Math.round(distance) != 0) {
-            // Calculate velocities as integers
-            velX = (int) Math.round(distX / distance * moveSpeed);
-            velY = (int) Math.round(distY / distance * moveSpeed);
+        velX = (int) Math.round(distX / distance * moveSpeed);
+        velY = (int) Math.round(distY / distance * moveSpeed);
 
 
-            collision = false;
+        collision = false;
+        CollisionChecker.getInstance().CheckTile(this);
+        int collisionIndex = CollisionChecker.getInstance().checkEntityCollision(this, ENTITIES);
+        handlePlayerCollision(collisionIndex);
 
-            int collisionIndex = CollisionChecker.getInstance().checkEntityCollision(this, ENTITIES);
-            handlePlayerCollision(collisionIndex);
-//            CollisionChecker.getInstance().CheckTile(this);
+        posX += velX;
+        posY += velY;
 
-            posX += velX;
-            posY += velY;
-
-
-            if (invincible == true) {
-                iFrames++;
-                if (iFrames > 60) {
-                    invincible = false;
-                    iFrames = 0;
-                }
+        if (invincible == true) {
+            iFrames++;
+            if (iFrames > 60) {
+                invincible = false;
+                iFrames = 0;
             }
+        }
 //             System.out.println(this.hashCode() + " " + velX + " " + velY + " " + collideUp + " " + collideDown + " "
 //             + collideLeft + " " + collideRight);
-        }
     }
 
     public void handlePlayerCollision(int index) {

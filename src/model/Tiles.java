@@ -14,6 +14,7 @@ public class Tiles {
     private Tile[] listTiles;
     private int mapTile[][];
     private static Tiles tiles = new Tiles();
+    Helper helper = new Helper();
 
     private Tiles() {
         listTiles = new Tile[20]; // 20 is the number of different tiles we can have
@@ -43,7 +44,7 @@ public class Tiles {
             listTiles[index].hasCollision = collision;
             BufferedImage curImage = ImageIO.read(getClass().getResourceAsStream("/background/"
                     + imageName + ".png"));
-            listTiles[index].tileImage = Helper.scaleImage(curImage, TILESIZE, TILESIZE);
+            listTiles[index].tileImage = helper.scaleImage(curImage, TILESIZE, TILESIZE);
 
         } catch(IOException e) {
             e.printStackTrace();

@@ -8,13 +8,18 @@ import java.util.Set;
 public class KeyHandler implements KeyListener {
     private static final KeyHandler kH = new KeyHandler();
     private Set<Integer> pressedKeys = new HashSet<>();
+    private int lastNumberKeyPressed = 1;
 
     private KeyHandler() {
     }
 
     @Override
     public void keyPressed(KeyEvent e) {
-        pressedKeys.add(e.getKeyCode());
+        int keyCode = e.getKeyCode();
+        pressedKeys.add(keyCode);
+        if (keyCode >= KeyEvent.VK_1 && keyCode <= KeyEvent.VK_8) {
+            lastNumberKeyPressed = keyCode - KeyEvent.VK_1 + 1;
+        }
     }
 
     @Override
@@ -28,6 +33,10 @@ public class KeyHandler implements KeyListener {
 
     public boolean isKeyPressed(int keyCode) {
         return pressedKeys.contains(keyCode);
+    }
+
+    public int getLastNumberKeyPressed() {
+        return lastNumberKeyPressed;
     }
 
     public static KeyHandler getInstance() {

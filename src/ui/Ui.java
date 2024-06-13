@@ -1,28 +1,34 @@
 package ui;
 
-import model.Heart;
+import model.Helper;
+import model.KeyHandler;
 import model.Player;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 
+import static ui.GamePanel.SCREEN_WIDTH;
 import static ui.GamePanel.TILESIZE;
 
 public class Ui {
     public BufferedImage heart_empty;
     public BufferedImage heart_half;
     public BufferedImage heart_full;
+    public BufferedImage hotbarBackground;
+    public BufferedImage hotbarBackgroundSelected;
 
     public Ui() {
-
-        Heart heart = new Heart();
-        heart_empty = heart.heart_empty;
-        heart_half = heart.heart_half;
-        heart_full = heart.heart_full;
+        heart_empty = setup("/objects/heart_empty", TILESIZE, TILESIZE);
+        heart_half = setup("/objects/heart_half", TILESIZE, TILESIZE);
+        heart_full = setup("/objects/heart_full", TILESIZE, TILESIZE);
+        hotbarBackground = setup("/background/hotbar", TILESIZE, TILESIZE);
+        hotbarBackgroundSelected = setup("/background/highlightedHotbar", TILESIZE + 14, TILESIZE + 14);
     }
 
     public void draw(Graphics2D g2) {
-        int x = TILESIZE / 2;
+        int x = SCREEN_WIDTH - TILESIZE * 3 / 2;
         int y = TILESIZE / 2;
         int i = 0;
 
@@ -30,12 +36,11 @@ public class Ui {
         while (i < Player.getInstance().getMaxHealth() / 2) {
             g2.drawImage(heart_empty, x, y, null);
             i++;
-            x += TILESIZE;
+            x -= TILESIZE;
         }
 
         //reset
-        x = TILESIZE / 2;
-        y = TILESIZE / 2;
+        x += TILESIZE;
         i = 0;
 
         //draw current health
@@ -48,5 +53,44 @@ public class Ui {
             i++;
             x += TILESIZE;
         }
+
+        x = TILESIZE / 2;
+
+        // drawing hotbar background
+        for (i = 0; i < 8; i++) {
+            g2.drawImage(hotbarBackground, x, y, null);
+            x += TILESIZE;
+        }
+
+        x = TILESIZE / 2 + (KeyHandler.getInstance().getLastNumberKeyPressed() - 1) * TILESIZE - 7;
+        y = TILESIZE / 2 - 7;
+        g2.drawImage(hotbarBackgroundSelected, x, y, null);
+
+        // reset x
+        x = TILESIZE / 2;
+        y = TILESIZE / 2;
+        // drawing the items in the hotbar
+        for (i = 0; i < 8; i++) {
+            if (i <  Player.getInstance().getInventory().size()) {
+                // centering the image
+                int centeringX = (TILESIZE - Player.getInstance().getInventory().get(i).getImage().getWidth()) / 2;
+                int centeringY = (TILESIZE - Player.getInstance().getInventory().get(i).getImage().getHeight()) / 2;
+                g2.drawImage(Player.getInstance().getInventory().get(i).getImage(), x + centeringX, y + centeringY, null);
+                x += TILESIZE;
+            }
+        }
+    }
+
+    public BufferedImage setup(String imagePath, int width, int height) {
+        BufferedImage image = null;
+
+        try {
+            image = ImageIO.read(getClass().getResourceAsStream(imagePath + ".png"));
+            image = Helper.scaleImage(image, width, height);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return image;
     }
 }

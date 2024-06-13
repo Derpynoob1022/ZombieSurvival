@@ -46,7 +46,7 @@ public class MouseHandler implements MouseListener, MouseMotionListener {
         if (pressed) {
             x = e.getX();
             y = e.getY();
-            System.out.println(x);
+//            System.out.println(x);
         }
     }
 

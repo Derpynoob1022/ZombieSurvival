@@ -1,16 +1,14 @@
 package model;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
+import static ui.GamePanel.DROPPED_ITEMS;
 import static ui.GamePanel.TILESIZE;
 
 public class CollisionChecker {
     private static CollisionChecker cc = new CollisionChecker();
-    public Map<Integer, Set<Entity>> collisionSys = new HashMap<>();
+    // public Map<Integer, Set<Entity>> collisionSys = new HashMap<>();
 
     private CollisionChecker() {
     }
@@ -90,7 +88,7 @@ public class CollisionChecker {
         int entityHitBoxX = entity.hitBox.x;
         int entityHitBoxY = entity.hitBox.y;
 
-        this.CheckTile(entity);
+        // this.CheckTile(entity);
 
         entity.hitBox.x += entity.posX + entity.velX;
         entity.hitBox.y += entity.posY + entity.velY;
@@ -102,8 +100,7 @@ public class CollisionChecker {
                 int entitiesHitBoxX = entities.get(i).hitBox.x;
                 int entitiesHitBoxY = entities.get(i).hitBox.y;
 
-                this.CheckTile(entities.get(i));
-
+                // this.CheckTile(entities.get(i));
 
                 entities.get(i).hitBox.x += entities.get(i).posX + entities.get(i).velX;
                 entities.get(i).hitBox.y += entities.get(i).posY + entities.get(i).velY;
@@ -227,7 +224,7 @@ public class CollisionChecker {
                 int entitiesHitBoxX = entities.get(i).hitBox.x;
                 int entitiesHitBoxY = entities.get(i).hitBox.y;
 
-                this.CheckTile(entities.get(i));
+                // this.CheckTile(entities.get(i));
 
                 entities.get(i).hitBox.x += entities.get(i).posX + entities.get(i).velX;
                 entities.get(i).hitBox.y += entities.get(i).posY + entities.get(i).velY;
@@ -243,5 +240,37 @@ public class CollisionChecker {
         }
 
         return IndexList;
+    }
+
+    // Checks collision with items on the ground
+    // maybe when full inv can't pick up?
+    public void checkItemPickUp() {
+        ArrayList<Integer> IndexList = new ArrayList<>(); // Initialize index to indicate no collision
+
+        int PLayerHitBoxX = Player.getInstance().hitBox.x;
+        int PlayerHitBoxY = Player.getInstance().hitBox.y;
+
+        Player.getInstance().hitBox.x += Player.getInstance().posX + Player.getInstance().velX;
+        Player.getInstance().hitBox.y += Player.getInstance().posY + Player.getInstance().velY;
+        // TODO: Make the hitbox rectangle bigger
+
+        Iterator<Item> iterator = DROPPED_ITEMS.iterator();
+        while (iterator.hasNext()) {
+            Item i = iterator.next();
+            if (Player.getInstance().hitBox.intersects(i.hitBox)) {
+                if (i instanceof Coin) {
+                    // is a coin
+                    Player.getInstance().addCoin();
+                } else {
+                    // other items (sword)
+                    Player.getInstance().addItem(i);
+                }
+                iterator.remove();
+            }
+        }
+
+        // Reset the hit box of the current entity
+        Player.getInstance().hitBox.x = PLayerHitBoxX;
+        Player.getInstance().hitBox.y = PlayerHitBoxY;
     }
 }

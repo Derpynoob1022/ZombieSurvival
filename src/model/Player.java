@@ -2,16 +2,23 @@ package model;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
 
 import static ui.GamePanel.*;
 
 public class Player extends Entity {
-    public final int screenX;
-    public final int screenY;
+    private final int screenX;
+    private final int screenY;
     private static Player player = new Player();
-    public Shape attackArea = new Rectangle(0, 0, 0, 0);
-    public boolean attackCD;
-    public int attackCDCount;
+    private AttackShape attackArea;
+    private boolean attackCD;
+    private int attackCDCount;
+    private double angle;
+    private int maxAttackDuration = 5;
+    private int curAttackDuration = 0;
+    private ArrayList<Item> inventory;
+    private int coin;
+    private int selectedItem;
 
     private Player() {
         posX = 0;
@@ -19,20 +26,19 @@ public class Player extends Entity {
         moveSpeed = 6;
         screenX = SCREEN_WIDTH/2 - TILESIZE/2;
         screenY = SCREEN_HEIGHT/2 - TILESIZE/2;
-        maxHealth = 100;
+        maxHealth = 10;
         health = 100;
 
-        hitBox = new Rectangle();
-        hitBox.x = 12;
-        hitBox.y = 12;
-        hitBox.width = 48;
-        hitBox.height = 48;
+        hitBox = new Rectangle(12, 12, 48, 48);
+
+        inventory = new ArrayList<>();
+        coin = 0;
+        selectedItem = 1;
     }
 
     public static Player getInstance() {
         return player;
     }
-
 
     @Override
     public void update() {
@@ -41,6 +47,8 @@ public class Player extends Entity {
         boolean keyPressedS = KeyHandler.getInstance().isKeyPressed(KeyEvent.VK_S);
         boolean keyPressedD = KeyHandler.getInstance().isKeyPressed(KeyEvent.VK_D);
         boolean clicked = MouseHandler.getInstance().pressed;
+
+        selectedItem = KeyHandler.getInstance().getLastNumberKeyPressed();
 
         velX = 0;
         velY = 0;
@@ -59,6 +67,7 @@ public class Player extends Entity {
         }
 
         double magnitude = Math.sqrt(velX * velX + velY * velY);
+
         if (magnitude != 0) {
             double normalizedVelX = velX / magnitude;
             double normalizedVelY = velY / magnitude;
@@ -66,12 +75,29 @@ public class Player extends Entity {
             velY = (int) Math.round(normalizedVelY * moveSpeed);
         }
 
+        // Checking for collision in the next frame
+        // TODO: remove collision boolean variable?
         collision = false;
+        CollisionChecker.getInstance().CheckTile(this);
         CollisionChecker.getInstance().checkEntityCollision(this, ENTITIES);
+        CollisionChecker.getInstance().checkItemPickUp();
 
+        // Executing the movement
         posX += velX;
         posY += velY;
 
+        // attack animation timer
+        if (attackArea != null) {
+            curAttackDuration++;
+        }
+
+        // If attack animation exceeds the max, its going to set the attackArea to null
+        if (curAttackDuration > maxAttackDuration) {
+            attackArea = null;
+            curAttackDuration = 0;
+        }
+
+        // timer to be vulnerable again
         if (invincible == true) {
             iFrames++;
             if (iFrames > 60) {
@@ -80,22 +106,28 @@ public class Player extends Entity {
             }
         }
 
-        if (attackCD) {
-            attackArea = null;
-        } else if (clicked) {
-            attack();
+        // attacking
+        if (!attackCD) {
+           if (clicked) {
+               attack();
+           }
         }
 
-
-        if (attackCD == true) {
+        // timer to attack again
+        if (attackCD) {
             attackCDCount++;
-            if (attackCDCount > 60) {
+            if (attackCDCount > 20) {
                 attackCD = false;
                 attackCDCount = 0;
             }
         }
+        // System.out.println(inventory.size());
     }
 
+    @Override
+    public void dropLoot() {
+        // Player doesn't drop any loot
+    }
 
     public void draw(Graphics2D g2) {
         g2.setColor(Color.white);
@@ -104,12 +136,13 @@ public class Player extends Entity {
         g2.setColor(Color.RED);
         g2.fillRect(screenX + hitBox.x, screenY + hitBox.y, hitBox.width, hitBox.height);
 
-        g2.setColor(Color.BLUE);
-        g2.draw(attackArea);
+        if (attackArea != null) {
+            attackArea.draw(g2);
+        }
     }
 
     public void attack() {
-        double angle = Math.atan2(MouseHandler.getInstance().y - SCREEN_HEIGHT / 2, MouseHandler.getInstance().x - SCREEN_WIDTH / 2);
+        angle = Math.atan2(MouseHandler.getInstance().y - SCREEN_HEIGHT / 2, MouseHandler.getInstance().x - SCREEN_WIDTH / 2);
         attackArea = new AttackShape(posX + TILESIZE / 2, posY + TILESIZE / 2, TILESIZE * 2, TILESIZE, angle);
 
         for (int i : CollisionChecker.getInstance().checkAttackCollision(attackArea, ENTITIES)) {
@@ -119,5 +152,90 @@ public class Player extends Entity {
                 curEntity.invincible = true;
             }
         }
+        attackCD = true;
+    }
+
+    public void addItem(Item item) {
+        inventory.add(item);
+    }
+
+    public int getScreenX() {
+        return screenX;
+    }
+
+    public int getScreenY() {
+        return screenY;
+    }
+
+    public static Player getPlayer() {
+        return player;
+    }
+
+    public AttackShape getAttackArea() {
+        return attackArea;
+    }
+
+    public boolean isAttackCD() {
+        return attackCD;
+    }
+
+    public int getAttackCDCount() {
+        return attackCDCount;
+    }
+
+    public double getAngle() {
+        return angle;
+    }
+
+    public int getMaxAttackDuration() {
+        return maxAttackDuration;
+    }
+
+    public int getCurAttackDuration() {
+        return curAttackDuration;
+    }
+
+    public ArrayList<Item> getInventory() {
+        return inventory;
+    }
+
+    public int getCoin() {
+        return coin;
+    }
+
+    public static void setPlayer(Player player) {
+        Player.player = player;
+    }
+
+    public void setAttackArea(AttackShape attackArea) {
+        this.attackArea = attackArea;
+    }
+
+    public void setAttackCD(boolean attackCD) {
+        this.attackCD = attackCD;
+    }
+
+    public void setAttackCDCount(int attackCDCount) {
+        this.attackCDCount = attackCDCount;
+    }
+
+    public void setAngle(double angle) {
+        this.angle = angle;
+    }
+
+    public void setMaxAttackDuration(int maxAttackDuration) {
+        this.maxAttackDuration = maxAttackDuration;
+    }
+
+    public void setCurAttackDuration(int curAttackDuration) {
+        this.curAttackDuration = curAttackDuration;
+    }
+
+    public void setInventory(ArrayList<Item> inventory) {
+        this.inventory = inventory;
+    }
+
+    public void addCoin() {
+        this.coin++;
     }
 }
