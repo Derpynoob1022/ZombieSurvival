@@ -2,7 +2,8 @@ package model;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 
 import static ui.GamePanel.*;
 
@@ -16,11 +17,13 @@ public class Player extends Entity {
     private double angle;
     private int maxAttackDuration = 5;
     private int curAttackDuration = 0;
-    private ArrayList<Item> inventory;
+    private Item[] inventory;
     private int coin;
-    private int selectedItem;
+    private Item selectedItem;
+    private Helper helper;
 
     private Player() {
+        helper = new Helper();
         posX = 0;
         posY = TILESIZE;
         moveSpeed = 6;
@@ -31,9 +34,10 @@ public class Player extends Entity {
 
         hitBox = new Rectangle(12, 12, 48, 48);
 
-        inventory = new ArrayList<>();
+        inventory = new Item[24];
+        inventory[0] = new GoldenSword();
         coin = 0;
-        selectedItem = 1;
+        selectedItem = inventory[KeyHandler.getInstance().getLastNumberKeyPressed()];
     }
 
     public static Player getInstance() {
@@ -48,7 +52,18 @@ public class Player extends Entity {
         boolean keyPressedD = KeyHandler.getInstance().isKeyPressed(KeyEvent.VK_D);
         boolean clicked = MouseHandler.getInstance().pressed;
 
-        selectedItem = KeyHandler.getInstance().getLastNumberKeyPressed();
+        selectedItem = inventory[KeyHandler.getInstance().getLastNumberKeyPressed() - 1];
+
+//        if (selectedItem != null) {
+//            System.out.println(selectedItem.getClass());
+//        }
+//            for (int i = 0; i < 4; i++) {
+//                if (inventory[i] != null) {
+//                    System.out.print(inventory[i].getClass());
+//                }
+//
+//        }
+//        System.out.println(KeyHandler.getInstance().getLastNumberKeyPressed());
 
         velX = 0;
         velY = 0;
@@ -106,11 +121,13 @@ public class Player extends Entity {
             }
         }
 
-        // attacking
-        if (!attackCD) {
-           if (clicked) {
-               attack();
-           }
+        // attacking if character is holding a sword
+        if (selectedItem instanceof Sword) {
+            if (!attackCD) {
+                if (clicked) {
+                    attack();
+                }
+            }
         }
 
         // timer to attack again
@@ -121,7 +138,6 @@ public class Player extends Entity {
                 attackCDCount = 0;
             }
         }
-        // System.out.println(inventory.size());
     }
 
     @Override
@@ -136,27 +152,69 @@ public class Player extends Entity {
         g2.setColor(Color.RED);
         g2.fillRect(screenX + hitBox.x, screenY + hitBox.y, hitBox.width, hitBox.height);
 
+        // TODO: maybe change this so that its not null but it just doesn't draw or deal damage when not attacking
         if (attackArea != null) {
-            attackArea.draw(g2);
+            drawAttack(g2);
         }
     }
 
     public void attack() {
-        angle = Math.atan2(MouseHandler.getInstance().y - SCREEN_HEIGHT / 2, MouseHandler.getInstance().x - SCREEN_WIDTH / 2);
-        attackArea = new AttackShape(posX + TILESIZE / 2, posY + TILESIZE / 2, TILESIZE * 2, TILESIZE, angle);
+        if (selectedItem instanceof Sword) {
+            // TODO: add custom attack area depending on the weapon
+            angle = Math.atan2(MouseHandler.getInstance().y - SCREEN_HEIGHT / 2, MouseHandler.getInstance().x - SCREEN_WIDTH / 2);
+            attackArea = new AttackShape(posX + TILESIZE / 2, posY + TILESIZE / 2, TILESIZE * 2, TILESIZE, angle);
 
-        for (int i : CollisionChecker.getInstance().checkAttackCollision(attackArea, ENTITIES)) {
-            Entity curEntity = ENTITIES.get(i);
-            if (!curEntity.invincible) {
-                curEntity.hit();
-                curEntity.invincible = true;
+            for (int i : CollisionChecker.getInstance().checkAttackCollision(attackArea, ENTITIES)) {
+                Entity curEntity = ENTITIES.get(i);
+                if (!curEntity.invincible) {
+                    curEntity.hit(((Sword) selectedItem).getDamage());
+                    curEntity.invincible = true;
+                }
             }
+            attackCD = true;
+        }  else {
+            // TODO: add different weapon attacks
         }
-        attackCD = true;
     }
 
-    public void addItem(Item item) {
-        inventory.add(item);
+    public boolean addItem(Item item) {
+        for (int i = 0; i < inventory.length; i++) {
+            if (inventory[i] == null) { // Find the first empty slot
+                inventory[i] = item; // Add the new item
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void drawAttack(Graphics2D g2) {
+        Sword currentWeapon = (Sword) selectedItem;
+        BufferedImage attack = helper.scaleImage(currentWeapon.image, currentWeapon.getAttackWidth(), currentWeapon.getAttackHeight());
+
+        // Calculate center of the screen
+        int centerX = SCREEN_WIDTH / 2;
+        int centerY = SCREEN_HEIGHT / 2;
+
+        // Calculate the bottom middle point of the image
+        int imageWidth = attack.getWidth();
+        int imageHeight = attack.getHeight();
+        int bottomMiddleX = imageWidth / 2;
+        int bottomMiddleY = imageHeight;
+
+        // Create a new transform for drawing centered on the screen
+        AffineTransform drawTransform = new AffineTransform();
+
+        // Translate to the center of the screen first
+        drawTransform.translate(centerX - bottomMiddleX, centerY - bottomMiddleY);
+
+        // Rotate around the bottom middle point of the image
+        drawTransform.rotate(angle + Math.PI / 2, bottomMiddleX, bottomMiddleY);
+
+        // Translate the image so that the bottom middle point is at the origin
+        // drawTransform.translate(-bottomMiddleX, -bottomMiddleY);
+
+        // Draw the image using the transformed graphics context
+        g2.drawImage(attack, drawTransform, null);
     }
 
     public int getScreenX() {
@@ -195,7 +253,7 @@ public class Player extends Entity {
         return curAttackDuration;
     }
 
-    public ArrayList<Item> getInventory() {
+    public Item[] getInventory() {
         return inventory;
     }
 
@@ -229,10 +287,6 @@ public class Player extends Entity {
 
     public void setCurAttackDuration(int curAttackDuration) {
         this.curAttackDuration = curAttackDuration;
-    }
-
-    public void setInventory(ArrayList<Item> inventory) {
-        this.inventory = inventory;
     }
 
     public void addCoin() {

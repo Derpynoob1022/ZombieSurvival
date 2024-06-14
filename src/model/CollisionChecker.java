@@ -238,7 +238,6 @@ public class CollisionChecker {
                 entities.get(i).hitBox.y = entitiesHitBoxY;
             }
         }
-
         return IndexList;
     }
 
@@ -261,11 +260,13 @@ public class CollisionChecker {
                 if (i instanceof Coin) {
                     // is a coin
                     Player.getInstance().addCoin();
+                    iterator.remove();
                 } else {
                     // other items (sword)
-                    Player.getInstance().addItem(i);
+                    if (Player.getInstance().addItem(i)) {
+                        iterator.remove();
+                    }
                 }
-                iterator.remove();
             }
         }
 

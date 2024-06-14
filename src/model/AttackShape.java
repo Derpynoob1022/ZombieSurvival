@@ -5,9 +5,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
-
-import static ui.GamePanel.*;
 
 public class AttackShape implements Shape {
     private Rectangle2D rectangle;
@@ -38,35 +35,6 @@ public class AttackShape implements Shape {
         transform.setToIdentity();
         transform.translate(translateX, translateY);
         transform.rotate(angle, refX, refY);
-    }
-
-    public void draw(Graphics2D g2) {
-        BufferedImage attack = helper.setup("objects/staff", (int) rectangle.getHeight(), (int) rectangle.getWidth());
-
-        // Calculate center of the screen
-        int centerX = SCREEN_WIDTH / 2;
-        int centerY = SCREEN_HEIGHT / 2;
-
-        // Calculate the bottom middle point of the image
-        int imageWidth = attack.getWidth();
-        int imageHeight = attack.getHeight();
-        int bottomMiddleX = imageWidth / 2;
-        int bottomMiddleY = imageHeight;
-
-        // Create a new transform for drawing centered on the screen
-        AffineTransform drawTransform = new AffineTransform();
-
-        // Translate to the center of the screen first
-        drawTransform.translate(centerX - bottomMiddleX, centerY - bottomMiddleY);
-
-        // Rotate around the bottom middle point of the image
-        drawTransform.rotate(angle + Math.PI / 2, bottomMiddleX, bottomMiddleY);
-
-        // Translate the image so that the bottom middle point is at the origin
-        // drawTransform.translate(-bottomMiddleX, -bottomMiddleY);
-
-        // Draw the image using the transformed graphics context
-        g2.drawImage(attack, drawTransform, null);
     }
 
     public void setAngle(double angle) {

@@ -71,11 +71,11 @@ public class Ui {
         y = TILESIZE / 2;
         // drawing the items in the hotbar
         for (i = 0; i < 8; i++) {
-            if (i <  Player.getInstance().getInventory().size()) {
+            if (Player.getInstance().getInventory()[i] != null) {
                 // centering the image
-                int centeringX = (TILESIZE - Player.getInstance().getInventory().get(i).getImage().getWidth()) / 2;
-                int centeringY = (TILESIZE - Player.getInstance().getInventory().get(i).getImage().getHeight()) / 2;
-                g2.drawImage(Player.getInstance().getInventory().get(i).getImage(), x + centeringX, y + centeringY, null);
+                int centeringX = (TILESIZE - Player.getInstance().getInventory()[i].getImage().getWidth()) / 2;
+                int centeringY = (TILESIZE - Player.getInstance().getInventory()[i].getImage().getHeight()) / 2;
+                g2.drawImage(Player.getInstance().getInventory()[i].getImage(), x + centeringX, y + centeringY, null);
                 x += TILESIZE;
             }
         }

@@ -47,8 +47,8 @@ public abstract class Entity {
         return maxHealth;
     }
 
-    public void hit() {
-        health -= 2;
+    public void hit(int i) {
+        health -= i;
     }
 
     public boolean isCollision() {
