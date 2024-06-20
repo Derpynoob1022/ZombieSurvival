@@ -3,14 +3,15 @@ package model;
 import java.awt.*;
 
 public abstract class Entity {
-    protected int posX;
-    protected int posY;
-    protected int velX;
-    protected int velY;
+    protected float posX;
+    protected float posY;
+    protected float velX;
+    protected int mass;
+    protected float velY;
     protected int moveSpeed;
+    protected float acceleration;
     protected boolean collision;
     protected Rectangle hitBox;
-    protected Rectangle nextHitBox;
     protected int health;
     protected boolean invincible;
     protected int iFrames;
@@ -19,20 +20,24 @@ public abstract class Entity {
 
     public abstract void update();
 
-    public int getPosX() {
+    public float getPosX() {
         return posX;
     }
 
-    public int getPosY() {
+    public float getPosY() {
         return posY;
     }
 
-    public int getVelX() {
+    public float getVelX() {
         return velX;
     }
 
-    public int getVelY() {
+    public float getVelY() {
         return velY;
+    }
+
+    public float getAcceleration() {
+        return acceleration;
     }
 
     public int getMoveSpeed() {
@@ -51,73 +56,6 @@ public abstract class Entity {
         health -= i;
     }
 
-    public boolean isCollision() {
-        return collision;
-    }
-
-    public Rectangle getHitBox() {
-        return hitBox;
-    }
-
-    public Rectangle getNextHitBox() {
-        return nextHitBox;
-    }
-
-    public boolean isInvincible() {
-        return invincible;
-    }
-
-    public int getiFrames() {
-        return iFrames;
-    }
-
-    public void setPosX(int posX) {
-        this.posX = posX;
-    }
-
-    public void setPosY(int posY) {
-        this.posY = posY;
-    }
-
-    public void setVelX(int velX) {
-        this.velX = velX;
-    }
-
-    public void setVelY(int velY) {
-        this.velY = velY;
-    }
-
-    public void setMoveSpeed(int moveSpeed) {
-        this.moveSpeed = moveSpeed;
-    }
-
-    public void setCollision(boolean collision) {
-        this.collision = collision;
-    }
-
-    public void setHitBox(Rectangle hitBox) {
-        this.hitBox = hitBox;
-    }
-
-    public void setNextHitBox(Rectangle nextHitBox) {
-        this.nextHitBox = nextHitBox;
-    }
-
-    public void setHealth(int health) {
-        this.health = health;
-    }
-
-    public void setInvincible(boolean invincible) {
-        this.invincible = invincible;
-    }
-
-    public void setiFrames(int iFrames) {
-        this.iFrames = iFrames;
-    }
-
-    public void setMaxHealth(int maxHealth) {
-        this.maxHealth = maxHealth;
-    }
 
     public abstract void dropLoot();
 }

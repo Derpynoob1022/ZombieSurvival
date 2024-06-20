@@ -4,8 +4,8 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 
 public abstract class Item {
-    protected int posX;
-    protected int posY;
+    protected float posX;
+    protected float posY;
     protected BufferedImage image;
     protected Rectangle hitBox;
     protected String name;
@@ -14,11 +14,11 @@ public abstract class Item {
         Helper.draw(g2, image, posX, posY);
     }
 
-    public int getPosX() {
+    public float getPosX() {
         return posX;
     }
 
-    public int getPosY() {
+    public float getPosY() {
         return posY;
     }
 

@@ -27,10 +27,12 @@ public class Player extends Entity {
         posX = 0;
         posY = TILESIZE;
         moveSpeed = 6;
+        acceleration = 1;
         screenX = SCREEN_WIDTH/2 - TILESIZE/2;
         screenY = SCREEN_HEIGHT/2 - TILESIZE/2;
         maxHealth = 10;
         health = 100;
+        mass = 10;
 
         hitBox = new Rectangle(12, 12, 48, 48);
 
@@ -65,41 +67,73 @@ public class Player extends Entity {
 //        }
 //        System.out.println(KeyHandler.getInstance().getLastNumberKeyPressed());
 
-        velX = 0;
-        velY = 0;
+        double accX = 0;
+        double accY = 0;
 
+        // Handle key inputs for acceleration
         if (keyPressedW) {
-            velY -= 1;
+            accY -= 1;
         }
         if (keyPressedA) {
-            velX -= 1;
+            accX -= 1;
         }
         if (keyPressedS) {
-            velY += 1;
+            accY += 1;
         }
         if (keyPressedD) {
-            velX += 1;
+            accX += 1;
         }
 
-        double magnitude = Math.sqrt(velX * velX + velY * velY);
+        // Calculate the magnitude of the acceleration vector
+        double magnitude = Math.sqrt(accX * accX + accY * accY);
 
         if (magnitude != 0) {
-            double normalizedVelX = velX / magnitude;
-            double normalizedVelY = velY / magnitude;
-            velX = (int) Math.round(normalizedVelX * moveSpeed);
-            velY = (int) Math.round(normalizedVelY * moveSpeed);
+            // Normalize the acceleration vector
+            double normalizedAccX = accX / magnitude;
+            double normalizedAccY = accY / magnitude;
+
+            // Apply the acceleration magnitude
+            accX = normalizedAccX * acceleration;
+            accY = normalizedAccY * acceleration;
+
+            // Calculate the proposed new velocity
+            double newVelX = velX + accX;
+            double newVelY = velY + accY;
+
+            // Calculate the speed of the proposed new velocity
+            double proposedSpeed = Math.sqrt(newVelX * newVelX + newVelY * newVelY);
+
+            if (proposedSpeed > moveSpeed) {
+                // Normalize the velocity to not exceed the maximum speed
+                double ratio = moveSpeed / proposedSpeed;
+                newVelX *= ratio;
+                newVelY *= ratio;
+            }
+
+            // Update the velocity
+            velX = (float) newVelX;
+            velY = (float) newVelY;
+        } else {
+            // Apply friction when there is no acceleration
+            velX *= 0.9;
+            velY *= 0.9;
         }
 
+        // System.out.println(posX + " " + posY);
+
+//        System.out.println(String.format("accX: %.2f, accY: %.2f, newVelX: %.2f, newVelY: %.2f, velX: %.2f, velY: %.2f",
+//                accX, accY, velX, velY, velX, velY));
+
         // Checking for collision in the next frame
-        // TODO: remove collision boolean variable?
         collision = false;
-        CollisionChecker.getInstance().CheckTile(this);
+        CollisionChecker.getInstance().checkTile(this);
         CollisionChecker.getInstance().checkEntityCollision(this, ENTITIES);
         CollisionChecker.getInstance().checkItemPickUp();
 
         // Executing the movement
         posX += velX;
         posY += velY;
+
 
         // attack animation timer
         if (attackArea != null) {

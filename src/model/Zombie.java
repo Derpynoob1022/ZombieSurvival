@@ -8,7 +8,7 @@ import java.io.IOException;
 import static ui.GamePanel.*;
 
 public class Zombie extends Enemy {
-    private Helper helper = new Helper();
+    // private Helper helper = new Helper();
 
     public Zombie(int x, int y) {
         posX = x;
@@ -16,7 +16,8 @@ public class Zombie extends Enemy {
         moveSpeed = 3;
 
         hitBox = new Rectangle(12, 24, 48, 48);
-
+        acceleration = 0.2f;
+        mass = 1;
         health = 5;
         maxHealth = 5;
     }
@@ -25,10 +26,10 @@ public class Zombie extends Enemy {
         try {
             BufferedImage scaledImage = Helper.scaleImage(ImageIO.read(getClass().getResourceAsStream("/enemy/zombie/zombie0.png")), TILESIZE, TILESIZE);
 
-            Helper.draw(g2, scaledImage, posX, posY);
+            Helper.draw(g2, scaledImage, (int) posX, (int) posY);
 
-            int posXHealth = posX;
-            int posYHealth = posY - 10;
+            int posXHealth = (int) posX;
+            int posYHealth = (int) posY - 10;
             int healthLeft = TILESIZE * health / maxHealth;
 
             Helper.draw(g2, Color.red, posXHealth, posYHealth, TILESIZE, 5);
@@ -55,7 +56,6 @@ public class Zombie extends Enemy {
             variantX = (int) (Math.random() * TILESIZE);
             variantY = (int) (Math.random() * TILESIZE);
             DROPPED_ITEMS.add(new GoldenSword(posX + variantX, posY + variantY));
-            System.out.println("goldgoldgold");
         }
         // System.out.println("Dropped loot");
     }
@@ -63,32 +63,60 @@ public class Zombie extends Enemy {
     @Override
     public void update() {
 
-        int distX = Player.getInstance().posX - posX;
-        int distY = Player.getInstance().posY - posY;
+        float distX = Player.getInstance().posX - posX;
+        float distY = Player.getInstance().posY - posY;
 
         double distance = Math.sqrt(distX * distX + distY * distY);
 
-        velX = (int) Math.round(distX / distance * moveSpeed);
-        velY = (int) Math.round(distY / distance * moveSpeed);
+        double accX = 0;
+        double accY = 0;
 
+        if (distance != 0) {
+            // Calculate normalized acceleration components
+            double normalizedAccX = distX / distance;
+            double normalizedAccY = distY / distance;
 
+            // Apply acceleration magnitude
+            accX = normalizedAccX * acceleration;
+            accY = normalizedAccY * acceleration;
+        }
+
+        // Calculate desired velocity after acceleration
+        double newVelX = velX + accX;
+        double newVelY = velY + accY;
+
+        // Calculate current speed
+        double currentSpeed = Math.sqrt(newVelX * newVelX + newVelY * newVelY);
+
+        // Limit velocity to moveSpeed if it exceeds the maximum speed
+        if (currentSpeed > moveSpeed) {
+            double ratio = moveSpeed / currentSpeed;
+            newVelX *= ratio;
+            newVelY *= ratio;
+        }
+
+        // Apply the new velocity
+        velX = (float) newVelX;
+        velY = (float) newVelY;
+
+        // Checking for collision in the next frame
         collision = false;
-        CollisionChecker.getInstance().CheckTile(this);
+        CollisionChecker.getInstance().checkTile(this);
         int collisionIndex = CollisionChecker.getInstance().checkEntityCollision(this, ENTITIES);
         handlePlayerCollision(collisionIndex);
 
+        // Executing the movement
         posX += velX;
         posY += velY;
 
-        if (invincible == true) {
+
+        if (invincible) {
             iFrames++;
             if (iFrames > 60) {
                 invincible = false;
                 iFrames = 0;
             }
         }
-//             System.out.println(this.hashCode() + " " + velX + " " + velY + " " + collideUp + " " + collideDown + " "
-//             + collideLeft + " " + collideRight);
     }
 
     public void handlePlayerCollision(int index) {

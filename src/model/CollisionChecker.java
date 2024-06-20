@@ -17,22 +17,35 @@ public class CollisionChecker {
         return cc;
     }
 
-    public void CheckTile(Entity entity) {
+    public void checkTile(Entity entity) {
 
-        int entityLeftWorldX = entity.posX + entity.hitBox.x;
-        int entityRightWorldX = entity.posX + entity.hitBox.x + entity.hitBox.width;
-        int entityTopWorldY = entity.posY + entity.hitBox.y;
-        int entityBottomWorldY = entity.posY + entity.hitBox.y + entity.hitBox.height;
+        int entityLeftWorldX = (int) entity.posX + entity.hitBox.x;
+        int entityRightWorldX = (int) entity.posX + entity.hitBox.x + entity.hitBox.width;
+        int entityTopWorldY = (int) entity.posY + entity.hitBox.y;
+        int entityBottomWorldY = (int) entity.posY + entity.hitBox.y + entity.hitBox.height;
 
         int entityLeftCol = entityLeftWorldX / TILESIZE;
         int entityRightCol = entityRightWorldX / TILESIZE;
         int entityTopRow = entityTopWorldY / TILESIZE;
         int entityBottomRow = entityBottomWorldY / TILESIZE;
 
+        int roundedVelX;
+        if (entity.getVelX() >= 0) {
+            roundedVelX = (int) Math.ceil(entity.getVelX());
+        } else {
+            roundedVelX = (int) Math.floor(entity.getVelX());
+        }
+
+        int roundedVelY;
+        if (entity.getVelY() >= 0) {
+            roundedVelY = (int) Math.ceil(entity.getVelY());
+        } else {
+            roundedVelY = (int) Math.floor(entity.getVelY());
+        }
 
         try {
             if (entity.getVelX() > 0) {
-                int entityRightColNext = (entityRightWorldX + entity.getVelX()) / TILESIZE;
+                int entityRightColNext = (entityRightWorldX + roundedVelX) / TILESIZE;
                 Tile nextTile1 = Tiles.getInstance().getListTiles()[Tiles.getInstance().getMapTile()[entityRightColNext][entityTopRow]];
                 Tile nextTile2 = Tiles.getInstance().getListTiles()[Tiles.getInstance().getMapTile()[entityRightColNext][entityBottomRow]];
 
@@ -44,7 +57,7 @@ public class CollisionChecker {
             }
 
             if (entity.getVelX() < 0) {
-                int entityLeftColNext = (entityLeftWorldX + entity.getVelX()) / TILESIZE;
+                int entityLeftColNext = (entityLeftWorldX + roundedVelX) / TILESIZE;
                 Tile nextTile1 = Tiles.getInstance().getListTiles()[Tiles.getInstance().getMapTile()[entityLeftColNext][entityTopRow]];
                 Tile nextTile2 = Tiles.getInstance().getListTiles()[Tiles.getInstance().getMapTile()[entityLeftColNext][entityBottomRow]];
 
@@ -56,7 +69,7 @@ public class CollisionChecker {
             }
 
             if (entity.getVelY() > 0) {
-                int entityBottomRowNext = (entityBottomWorldY + entity.getVelY()) / TILESIZE;
+                int entityBottomRowNext = (entityBottomWorldY + roundedVelY) / TILESIZE;
                 Tile nextTile1 = Tiles.getInstance().getListTiles()[Tiles.getInstance().getMapTile()[entityLeftCol][entityBottomRowNext]];
                 Tile nextTile2 = Tiles.getInstance().getListTiles()[Tiles.getInstance().getMapTile()[entityRightCol][entityBottomRowNext]];
 
@@ -68,7 +81,7 @@ public class CollisionChecker {
             }
 
             if (entity.getVelY() < 0) {
-                int entityTopRowNext = (entityTopWorldY + entity.getVelY()) / TILESIZE;
+                int entityTopRowNext = (entityTopWorldY + roundedVelY) / TILESIZE;
                 Tile nextTile1 = Tiles.getInstance().getListTiles()[Tiles.getInstance().getMapTile()[entityLeftCol][entityTopRowNext]];
                 Tile nextTile2 = Tiles.getInstance().getListTiles()[Tiles.getInstance().getMapTile()[entityRightCol][entityTopRowNext]];
 
@@ -106,72 +119,25 @@ public class CollisionChecker {
                 entities.get(i).hitBox.y += entities.get(i).posY + entities.get(i).velY;
 
                 if (entity.hitBox.intersects(entities.get(i).hitBox)) {
-//                    if (!sysContains(entity, collisionSys)) {
-//                        if (!sysContains(entities[i], collisionSys)) {
-//                            Set tempSet = new HashSet<>();
-//                            tempSet.add(entity);
-//                            tempSet.add(entities[i]);
-//                            collisionSys.put(entity.hashCode(), tempSet);
-//                        } else {
-//                            for (int key : collisionSys.keySet()) {
-//                                if (collisionSys.get(key).contains(entities[i])) {
-//                                    collisionSys.get(key).add(entity);
-//                                    break;
-//                                }
-//                            }
-//                        }
-//                    } else if (sysContains(entity, collisionSys) && sysContains(entities[i], collisionSys)) {
-//                        Set tempSet = new HashSet<>();
-//                        Iterator<Map.Entry<Integer, Set<Entity>>> iterator = collisionSys.entrySet().iterator();
-//                        while (iterator.hasNext()) {
-//                            Map.Entry<Integer, Set<Entity>> entry = iterator.next();
-//                            Set<Entity> entitySet = entry.getValue();
-//                            if (entitySet.contains(entities[i])) {
-//                                tempSet = entitySet;
-//                                iterator.remove(); // Remove the entry from the map using the iterator
-//                            }
-//                        }
-//
-//
-//                        for (int key : collisionSys.keySet()) {
-//                            if (collisionSys.get(key).contains(entity)) {
-//                                collisionSys.get(key).addAll(tempSet);
-//                            }
-//                        }
-//                    } else {
-//                        for (int key : collisionSys.keySet()) {
-//                            if (collisionSys.get(key).contains(entity)) {
-//                                collisionSys.get(key).add(entities[i]);
-//                                break;
-//                            }
-//                        }
-//                    }
-                    if (entity.hitBox.x > entities.get(i).hitBox.x) {
-                        if (entity.velX < 0) {
-                            entity.velX = 0;
-                        }
-                    }
 
-                    if (entity.hitBox.x < entities.get(i).hitBox.x) {
-                        if (entity.velX > 0) {
-                            entity.velX = 0;
-                        }
-                    }
+                    // Calculate new velocities (entities stick together)
+                    float totalMass = entity.mass + entities.get(i).mass;
+                    float vX = (entity.velX * entity.mass + entities.get(i).velX * entities.get(i).mass) / totalMass;
+                    float vY = (entity.velY * entity.mass + entities.get(i).velY * entities.get(i).mass) / totalMass;
 
-                    if (entity.hitBox.y > entities.get(i).hitBox.y) {
-                        if (entity.velY < 0) {
-                            entity.velY = 0;
-                        }
-                    }
+                    // Update velocities
+                    entity.velX = vX;
+                    entity.velY = vY;
+                    checkTile(entity);
 
-                    if (entity.hitBox.y < entities.get(i).hitBox.y) {
-                        if (entity.velY > 0) {
-                            entity.velY = 0;
-                        }
-                    }
+                    entities.get(i).velX = vX;
+                    entities.get(i).velY = vY;
+                    checkTile(entities.get(i));
+
                     index = i;
                     entity.collision = true;
                 }
+
 
                 // Reset the hit box of the current entity
                 entities.get(i).hitBox.x = entitiesHitBoxX;

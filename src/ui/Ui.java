@@ -66,6 +66,15 @@ public class Ui {
         y = TILESIZE / 2 - 7;
         g2.drawImage(hotbarBackgroundSelected, x, y, null);
 
+
+        x = TILESIZE / 2 + 5;
+        y = TILESIZE / 2 + 15;
+        // drawing number on the hotbar
+        for (i = 0; i < 8; i++) {
+            g2.drawString(Integer.toString(i + 1), x, y);
+            x += TILESIZE;
+        }
+
         // reset x
         x = TILESIZE / 2;
         y = TILESIZE / 2;
@@ -79,6 +88,10 @@ public class Ui {
                 x += TILESIZE;
             }
         }
+    }
+
+    public void drawInventory(Graphics2D g2) {
+        // draw the inventory menu
     }
 
     public BufferedImage setup(String imagePath, int width, int height) {
