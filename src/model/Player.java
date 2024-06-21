@@ -17,7 +17,6 @@ public class Player extends Entity {
     private double angle;
     private int maxAttackDuration = 5;
     private int curAttackDuration = 0;
-    private Item[] inventory;
     private int coin;
     private Item selectedItem;
     private Helper helper;
@@ -35,11 +34,8 @@ public class Player extends Entity {
         mass = 10;
 
         hitBox = new Rectangle(12, 12, 48, 48);
-
-        inventory = new Item[24];
-        inventory[0] = new GoldenSword();
         coin = 0;
-        selectedItem = inventory[KeyHandler.getInstance().getLastNumberKeyPressed()];
+        selectedItem = InventoryHandler.getInstance().getItem(KeyHandler.getInstance().getLastNumberKeyPressed());
     }
 
     public static Player getInstance() {
@@ -54,7 +50,7 @@ public class Player extends Entity {
         boolean keyPressedD = KeyHandler.getInstance().isKeyPressed(KeyEvent.VK_D);
         boolean clicked = MouseHandler.getInstance().pressed;
 
-        selectedItem = inventory[KeyHandler.getInstance().getLastNumberKeyPressed() - 1];
+        selectedItem = InventoryHandler.getInstance().getItem(KeyHandler.getInstance().getLastNumberKeyPressed() - 1);
 
 //        if (selectedItem != null) {
 //            System.out.println(selectedItem.getClass());
@@ -212,9 +208,9 @@ public class Player extends Entity {
     }
 
     public boolean addItem(Item item) {
-        for (int i = 0; i < inventory.length; i++) {
-            if (inventory[i] == null) { // Find the first empty slot
-                inventory[i] = item; // Add the new item
+        for (int i = 0; i < InventoryHandler.getInstance().getInventory().length; i++) {
+            if (InventoryHandler.getInstance().getItem(i) == null) { // Find the first empty slot
+                InventoryHandler.getInstance().addItem(i, item); // Add the new item
                 return true;
             }
         }
@@ -287,10 +283,6 @@ public class Player extends Entity {
         return curAttackDuration;
     }
 
-    public Item[] getInventory() {
-        return inventory;
-    }
-
     public int getCoin() {
         return coin;
     }
@@ -317,6 +309,10 @@ public class Player extends Entity {
 
     public void setMaxAttackDuration(int maxAttackDuration) {
         this.maxAttackDuration = maxAttackDuration;
+    }
+
+    public Slot[] getInventory() {
+        return InventoryHandler.getInstance().getInventory();
     }
 
     public void setCurAttackDuration(int curAttackDuration) {

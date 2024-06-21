@@ -15,7 +15,7 @@ public class GamePanel extends JPanel implements Runnable {
     public static final int SCREEN_HEIGHT = TILESIZE * SCREEN_MAXROW;
     public static final int WORLD_MAXROW = 100;
     public static final int WORLD_MAXCOL = 100;
-    public GameState gameState;
+    public static GameState GAMESTATE = GameState.play;
     public static ArrayList<Entity> ENTITIES;
     public static ArrayList<Item> DROPPED_ITEMS;
     private Thread GT;
@@ -69,62 +69,73 @@ public class GamePanel extends JPanel implements Runnable {
 
     private void setup() {
         ENTITIES = new ArrayList<>();
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 100; i++) {
             ENTITIES.add(new Zombie((i + 6) *TILESIZE, 2 * TILESIZE));
         }
         ENTITIES.add(Player.getInstance());
         DROPPED_ITEMS = new ArrayList<>();
     }
 
-    public void update() {
-        if (gameState == GameState.play) {
-            for (Entity e : ENTITIES) {
-                e.update();
-            }
-
-            if (Player.getInstance().getHealth() <= 0) {
-                System.exit(0);
-            }
-
-            Iterator<Entity> iterator = ENTITIES.iterator();
-            while (iterator.hasNext()) {
-                Entity e = iterator.next();
-                if (e.getHealth() <= 0) {
-                    e.dropLoot();
-                    iterator.remove();
+    public synchronized void update() {
+        switch(GAMESTATE) {
+            case play:
+                for (Entity e : ENTITIES) {
+                    e.update();
                 }
-            }
+
+                // Player dies
+                if (Player.getInstance().getHealth() <= 0) {
+                    System.exit(0);
+                }
+
+                Iterator<Entity> iterator = ENTITIES.iterator();
+                while (iterator.hasNext()) {
+                    Entity e = iterator.next();
+                    if (e.getHealth() <= 0) {
+                        e.dropLoot();
+                        iterator.remove();
+                    }
+                }
+                break;
+
+            case inventory:
+                InventoryHandler.getInstance().update();
+                break;
         }
     }
 
-    public void paintComponent(Graphics g) {
+    // used synchronized to prevent concurrent modification error
+    public synchronized void paintComponent(Graphics g) {
         super.paintComponent(g);
 
         Graphics2D g2 = (Graphics2D) g;
 
-        switch (gameState) {
-
+        switch (GAMESTATE) {
             case play:
-                // drawing the components when playing
-                Tiles.getInstance().draw(g2);
-
-                for (Item i : DROPPED_ITEMS) {
-                    i.draw(g2);
-                }
-
-                for (Entity e : ENTITIES) {
-                    e.draw(g2);
-                }
-
+                renderBackground(g2);
                 ui.draw(g2);
-
                 g2.dispose();
                 break;
             case pause:
                 break;
             case inventory:
+                renderBackground(g2);
                 ui.drawInventory(g2);
+                g2.dispose();
                 break;
+        }
+    }
+
+    private void renderBackground(Graphics2D g2) {
+        // drawing the components when playing
+        Tiles.getInstance().draw(g2);
+
+        for (Item i : DROPPED_ITEMS) {
+            i.draw(g2);
+        }
+
+        for (Entity e : ENTITIES) {
+            e.draw(g2);
         }
     }
 }

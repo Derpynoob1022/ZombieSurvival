@@ -1,6 +1,7 @@
 package ui;
 
 import model.Helper;
+import model.InventoryHandler;
 import model.KeyHandler;
 import model.Player;
 
@@ -9,8 +10,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
-import static ui.GamePanel.SCREEN_WIDTH;
-import static ui.GamePanel.TILESIZE;
+import static ui.GamePanel.*;
 
 public class Ui {
     public BufferedImage heart_empty;
@@ -62,6 +62,7 @@ public class Ui {
             x += TILESIZE;
         }
 
+        // draw highlighted background
         x = TILESIZE / 2 + (KeyHandler.getInstance().getLastNumberKeyPressed() - 1) * TILESIZE - 7;
         y = TILESIZE / 2 - 7;
         g2.drawImage(hotbarBackgroundSelected, x, y, null);
@@ -80,18 +81,49 @@ public class Ui {
         y = TILESIZE / 2;
         // drawing the items in the hotbar
         for (i = 0; i < 8; i++) {
-            if (Player.getInstance().getInventory()[i] != null) {
+            if (Player.getInstance().getInventory()[i].getItem() != null) {
                 // centering the image
-                int centeringX = (TILESIZE - Player.getInstance().getInventory()[i].getImage().getWidth()) / 2;
-                int centeringY = (TILESIZE - Player.getInstance().getInventory()[i].getImage().getHeight()) / 2;
-                g2.drawImage(Player.getInstance().getInventory()[i].getImage(), x + centeringX, y + centeringY, null);
+                int centeringX = (TILESIZE - Player.getInstance().getInventory()[i].getItem().getImage().getWidth()) / 2;
+                int centeringY = (TILESIZE - Player.getInstance().getInventory()[i].getItem().getImage().getHeight()) / 2;
+                g2.drawImage(Player.getInstance().getInventory()[i].getItem().getImage(), x + centeringX, y + centeringY, null);
                 x += TILESIZE;
             }
         }
     }
 
     public void drawInventory(Graphics2D g2) {
-        // draw the inventory menu
+        g2.setColor(Color.darkGray);
+        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,0.9f));
+        g2.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+        int x;
+        int y = SCREEN_HEIGHT / 2 + TILESIZE * 2;
+
+        // drawing inventory background
+        for (int g = 0; g < 4; g++) {
+            x = SCREEN_WIDTH / 2 - TILESIZE * 4;
+            for (int i = 0; i < 8; i++) {
+                g2.drawImage(hotbarBackground, x, y, null);
+                x += TILESIZE;
+            }
+            y -= TILESIZE;
+        }
+
+        y = SCREEN_HEIGHT / 2 + TILESIZE * 2;
+
+        for (int g = 0; g < 4; g++) {
+            x = SCREEN_WIDTH / 2 - TILESIZE * 4;
+            for (int i = 0; i < 8; i++) {
+                if (InventoryHandler.getInstance().getItem(g * 8 + i) != null) {
+                    // centering the image
+                    int centeringX = (TILESIZE - Player.getInstance().getInventory()[i].getItem().getImage().getWidth()) / 2;
+                    int centeringY = (TILESIZE - Player.getInstance().getInventory()[i].getItem().getImage().getHeight()) / 2;
+                    g2.drawImage(Player.getInstance().getInventory()[i].getItem().getImage(), x + centeringX, y + centeringY, null);
+                    x += TILESIZE;
+                }
+            }
+            y -= TILESIZE;
+        }
     }
 
     public BufferedImage setup(String imagePath, int width, int height) {

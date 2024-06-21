@@ -120,22 +120,38 @@ public class CollisionChecker {
 
                 if (entity.hitBox.intersects(entities.get(i).hitBox)) {
 
-                    // Calculate new velocities (entities stick together)
-                    float totalMass = entity.mass + entities.get(i).mass;
-                    float vX = (entity.velX * entity.mass + entities.get(i).velX * entities.get(i).mass) / totalMass;
-                    float vY = (entity.velY * entity.mass + entities.get(i).velY * entities.get(i).mass) / totalMass;
+                    // Calculate new velocities
+                    float v1x = ((entity.mass - entities.get(i).mass) * entity.velX + 2 * entities.get(i).mass * entities.get(i).velX) / (entity.mass + entities.get(i).mass);
+                    float v1y = ((entity.mass - entities.get(i).mass) * entity.velY + 2 * entities.get(i).mass * entities.get(i).velY) / (entity.mass + entities.get(i).mass);
+                    float v2x = ((entities.get(i).mass - entity.mass) * entities.get(i).velX + 2 * entity.mass * entity.velX) / (entity.mass + entities.get(i).mass);
+                    float v2y = ((entities.get(i).mass - entity.mass) * entities.get(i).velY + 2 * entity.mass * entity.velY) / (entity.mass + entities.get(i).mass);
 
                     // Update velocities
-                    entity.velX = vX;
-                    entity.velY = vY;
+                    entity.velX = v1x;
+                    entity.velY = v1y;
                     checkTile(entity);
 
-                    entities.get(i).velX = vX;
-                    entities.get(i).velY = vY;
+                    entities.get(i).velX = v2x;
+                    entities.get(i).velY = v2y;
                     checkTile(entities.get(i));
 
                     index = i;
                     entity.collision = true;
+
+//                    float totalMass = entity.mass + entities.get(i).mass;
+//                    float vX = (entity.velX * entity.mass + entities.get(i).velX * entities.get(i).mass) / totalMass;
+//                    float vY = (entity.velY * entity.mass + entities.get(i).velY * entities.get(i).mass) / totalMass;
+//
+//                    entity.velX = vX;
+//                    entity.velY = vY;
+//                    checkTile(entity);
+//
+//                    entities.get(i).velX = vX;
+//                    entities.get(i).velY = vY;
+//                    checkTile(entities.get(i));
+//
+//                    index = i;
+//                    entity.collision = true;
                 }
 
 
