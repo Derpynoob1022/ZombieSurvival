@@ -23,4 +23,8 @@ public class Slot {
     public Rectangle getHitbox() {
         return hitbox;
     }
+
+    public void removeItem() {
+        this.item = null;
+    }
 }

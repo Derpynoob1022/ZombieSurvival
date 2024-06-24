@@ -1,9 +1,6 @@
 package ui;
 
-import model.Helper;
-import model.InventoryHandler;
-import model.KeyHandler;
-import model.Player;
+import model.*;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -81,13 +78,15 @@ public class Ui {
         y = TILESIZE / 2;
         // drawing the items in the hotbar
         for (i = 0; i < 8; i++) {
-            if (Player.getInstance().getInventory()[i].getItem() != null) {
+            Slot slot = Player.getInstance().getInventory()[i];
+            if (slot != null && slot.getItem() != null) {
                 // centering the image
-                int centeringX = (TILESIZE - Player.getInstance().getInventory()[i].getItem().getImage().getWidth()) / 2;
-                int centeringY = (TILESIZE - Player.getInstance().getInventory()[i].getItem().getImage().getHeight()) / 2;
-                g2.drawImage(Player.getInstance().getInventory()[i].getItem().getImage(), x + centeringX, y + centeringY, null);
-                x += TILESIZE;
+                BufferedImage slotImage = slot.getItem().getImage();
+                int centeringX = (TILESIZE - slotImage.getWidth()) / 2;
+                int centeringY = (TILESIZE - slotImage.getHeight()) / 2;
+                g2.drawImage(slotImage, x + centeringX, y + centeringY, null);
             }
+            x += TILESIZE;
         }
     }
 
@@ -111,18 +110,29 @@ public class Ui {
 
         y = SCREEN_HEIGHT / 2 + TILESIZE * 2;
 
-        for (int g = 0; g < 4; g++) {
-            x = SCREEN_WIDTH / 2 - TILESIZE * 4;
-            for (int i = 0; i < 8; i++) {
-                if (InventoryHandler.getInstance().getItem(g * 8 + i) != null) {
-                    // centering the image
-                    int centeringX = (TILESIZE - Player.getInstance().getInventory()[i].getItem().getImage().getWidth()) / 2;
-                    int centeringY = (TILESIZE - Player.getInstance().getInventory()[i].getItem().getImage().getHeight()) / 2;
-                    g2.drawImage(Player.getInstance().getInventory()[i].getItem().getImage(), x + centeringX, y + centeringY, null);
-                    x += TILESIZE;
+        for (int g = 0; g < 4; g++) {  // 4 rows
+            x = SCREEN_WIDTH / 2 - TILESIZE * 4;  // Reset x for each row
+            for (int i = 0; i < 8; i++) {  // 8 columns
+                Slot slot = Player.getInstance().getInventory()[g * 8 + i];
+                if (slot != null && slot.getItem() != null) {
+                    BufferedImage slotImage = slot.getItem().getImage();
+                    // Centering the image
+                    int centeringX = (TILESIZE - slotImage.getWidth()) / 2;
+                    int centeringY = (TILESIZE - slotImage.getHeight()) / 2;
+                    g2.drawImage(slotImage, x + centeringX, y + centeringY, null);
                 }
+                x += TILESIZE;
             }
             y -= TILESIZE;
+        }
+
+        if (InventoryHandler.getInstance().getGrabbedItem()) {
+            int mouseX = (int) MouseHandler.getInstance().x;
+            int mouseY = (int) MouseHandler.getInstance().y;
+            Item item = InventoryHandler.getInstance().getSelectedItem();
+            int centeringX = item.getImage().getWidth() / 2;
+            int centeringY = item.getImage().getHeight() / 2;
+            g2.drawImage(item.getImage(), mouseX - centeringX, mouseY - centeringY, null);
         }
     }
 

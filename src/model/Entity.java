@@ -56,6 +56,9 @@ public abstract class Entity {
         health -= i;
     }
 
+    public Rectangle getHitbox() {
+        return hitBox;
+    }
 
     public abstract void dropLoot();
 }

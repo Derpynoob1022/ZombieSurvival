@@ -56,6 +56,8 @@ public class MouseHandler implements MouseListener, MouseMotionListener {
 
     @Override
     public void mouseMoved(MouseEvent e) {
+        x = e.getX();
+        y = e.getY();
     }
 
     public boolean isClicked() {

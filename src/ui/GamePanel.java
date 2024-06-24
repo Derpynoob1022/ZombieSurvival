@@ -7,6 +7,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+// TODO: Need to optimize collision checking and drawing things cuz it gets laggy when there is only like 50 mobs around
 public class GamePanel extends JPanel implements Runnable {
     public static final int TILESIZE = 72;
     public static final int SCREEN_MAXROW = 12;
@@ -69,7 +70,7 @@ public class GamePanel extends JPanel implements Runnable {
 
     private void setup() {
         ENTITIES = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 40; i++) {
             ENTITIES.add(new Zombie((i + 6) *TILESIZE, 2 * TILESIZE));
         }
         ENTITIES.add(Player.getInstance());

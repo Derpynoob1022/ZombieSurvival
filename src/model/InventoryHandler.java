@@ -5,7 +5,7 @@ import static ui.GamePanel.*;
 public class InventoryHandler {
     private static InventoryHandler inventoryHandler = new InventoryHandler();
     private Slot[] inventory;
-    private Slot selectedSlot;
+    private Item selectedItem;
     private boolean grabbedItem = false;
 
     private InventoryHandler() {
@@ -31,8 +31,17 @@ public class InventoryHandler {
     public Slot[] getInventory() {
         return inventory;
     }
+
     public Item getItem(int i) {
         return inventory[i].getItem();
+    }
+
+    public Item getSelectedItem() {
+        return selectedItem;
+    }
+
+    public boolean getGrabbedItem() {
+        return grabbedItem;
     }
 
     public void addItem(int i, Item item) {
@@ -44,22 +53,39 @@ public class InventoryHandler {
         if (MouseHandler.getInstance().isClicked()) {
             Double mouseX = MouseHandler.getInstance().x;
             Double mouseY = MouseHandler.getInstance().y;
-            if (!grabbedItem) {
-                for (Slot i : inventory) {
-                    if (i.getHitbox().contains(mouseX, mouseY)) {
-                        selectedSlot = i;
-                        grabbedItem = true;
-                    }
-                }
-            } else {
-                for (Slot i : inventory) {
-                    if (i.getHitbox().contains(mouseX, mouseY)) {
-                        if (i.getItem() == null) {
 
+            if (!grabbedItem) {
+                for (Slot slot : inventory) {
+                    if (slot.getHitbox().contains(mouseX, mouseY)) {
+                        if (slot.getItem() != null) {
+                            selectedItem = slot.getItem();
+                            grabbedItem = true;
+                            slot.removeItem();
+                            // System.out.println("grabbed item");
+                            break;  // Exit loop after grabbing an item
                         }
                     }
                 }
+            } else {
+                for (Slot slot : inventory) {
+                    if (slot.getHitbox().contains(mouseX, mouseY)) {
+                        if (slot.getItem() == null) {
+                            slot.setItem(selectedItem);
+                            selectedItem = null;
+                            grabbedItem = false;
+                            // System.out.println("replaced empty slot");
+                        } else if (slot.getItem() != null) {
+                            Item temp = slot.getItem();
+                            slot.setItem(selectedItem);
+                            selectedItem = temp;
+                        // System.out.println("picked up new item");
+                        }
+                        break;  // Exit loop after placing an item
+                    }
+                }
             }
+
+            MouseHandler.getInstance().resetClicked();
         }
     }
 }
