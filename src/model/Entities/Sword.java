@@ -1,4 +1,6 @@
-package model;
+package model.Entities;
+
+import model.Items.Item;
 
 public class Sword extends Item {
     protected int damage;

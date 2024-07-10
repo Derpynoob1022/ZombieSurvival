@@ -1,4 +1,6 @@
-package model;
+package model.Entities;
+
+import model.Collision.Collidable;
 
 import java.awt.*;
 import java.awt.geom.AffineTransform;
@@ -6,11 +8,10 @@ import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 
-public class AttackShape implements Shape {
+public class AttackShape implements Shape, Collidable {
     private Rectangle2D rectangle;
     private double angle; // Rotation angle in radians
     private AffineTransform transform;
-    Helper helper = new Helper();
 
     public AttackShape(double x, double y, double width, double height, double angle) {
         this.rectangle = new Rectangle2D.Double(x, y, width, height);

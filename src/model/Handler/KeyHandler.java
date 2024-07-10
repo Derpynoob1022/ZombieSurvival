@@ -1,17 +1,18 @@
-package model;
+package model.Handler;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.HashSet;
 import java.util.Set;
 
-import static ui.GamePanel.GAMESTATE;
+import static ui.GamePanel.*;
 
 public class KeyHandler implements KeyListener {
     private static final KeyHandler kH = new KeyHandler();
     private Set<Integer> pressedKeys = new HashSet<>();
     private int lastNumberKeyPressed = 1;
-    private boolean canPress = true;
+    private boolean canPressInventory = true;
+    private boolean canPressPause = true;
 
     private KeyHandler() {
     }
@@ -24,15 +25,31 @@ public class KeyHandler implements KeyListener {
             lastNumberKeyPressed = keyCode - KeyEvent.VK_1 + 1;
         }
 
-        if (e.getKeyCode() == KeyEvent.VK_ESCAPE && canPress) {
+        if (e.getKeyCode() == KeyEvent.VK_E && canPressInventory) {
             switch (GAMESTATE) {
                 case play:
                     GAMESTATE = GameState.inventory;
-                    canPress = false;
+                    canPressInventory = false;
                     break;
                 case inventory:
                     GAMESTATE = GameState.play;
-                    canPress = false;
+                    canPressInventory = false;
+                    GAME_SNAPSHOT = null;
+                    break;
+            }
+        }
+
+        if (e.getKeyCode() == KeyEvent.VK_ESCAPE && canPressPause) {
+            switch (GAMESTATE) {
+                case play:
+                case inventory:
+                    GAMESTATE = GameState.pause;
+                    canPressPause = false;
+                    break;
+                case pause:
+                    GAMESTATE = GameState.play;
+                    canPressPause = false;
+                    GAME_SNAPSHOT = null;
                     break;
             }
         }
@@ -40,9 +57,14 @@ public class KeyHandler implements KeyListener {
 
     @Override
     public void keyReleased(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-            canPress = true;
+        if (e.getKeyCode() == KeyEvent.VK_E) {
+            canPressInventory = true;
         }
+
+        if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+            canPressPause = true;
+        }
+
         pressedKeys.remove(e.getKeyCode());
     }
 

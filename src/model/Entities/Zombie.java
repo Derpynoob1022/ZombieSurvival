@@ -1,4 +1,8 @@
-package model;
+package model.Entities;
+
+import model.Handler.Helper;
+import model.Items.Coin;
+import model.Items.GoldenSword;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -15,14 +19,16 @@ public class Zombie extends Enemy {
         posY = y;
         moveSpeed = 3;
 
-        hitBox = new Rectangle(12, 24, 48, 48);
-        acceleration = 0.2f;
+        hitBox = new Rectangle(12, 12, 40, 40);
+        maxAcceleration = 0.2f;
         mass = 1;
         health = 5;
         maxHealth = 5;
+
+        bounds = new Rectangle((int) posX + hitBox.x, (int) posY + hitBox.y, hitBox.width, hitBox.height);
     }
 
-    public void draw (Graphics2D g2) {
+    public void draw(Graphics2D g2) {
         try {
             BufferedImage scaledImage = Helper.scaleImage(ImageIO.read(getClass().getResourceAsStream("/enemy/zombie/zombie0.png")), TILESIZE, TILESIZE);
 
@@ -46,7 +52,7 @@ public class Zombie extends Enemy {
     public void dropLoot() {
         int variantX = (int) (Math.random() * TILESIZE);
         int variantY = (int) (Math.random() * TILESIZE);
-        DROPPED_ITEMS.add(new Coin(posX + variantX, posY + variantY));
+        getDroppedItems().add(new Coin(posX + variantX, posY + variantY));
 
         // between 1 and 60
         int chance = (int) Math.floor(Math.random() * 60) + 1;
@@ -55,7 +61,7 @@ public class Zombie extends Enemy {
         if (chance > 30) {
             variantX = (int) (Math.random() * TILESIZE);
             variantY = (int) (Math.random() * TILESIZE);
-            DROPPED_ITEMS.add(new GoldenSword(posX + variantX, posY + variantY));
+            getDroppedItems().add(new GoldenSword(posX + variantX, posY + variantY));
         }
         // System.out.println("Dropped loot");
     }
@@ -77,8 +83,8 @@ public class Zombie extends Enemy {
             double normalizedAccY = distY / distance;
 
             // Apply acceleration magnitude
-            accX = normalizedAccX * acceleration;
-            accY = normalizedAccY * acceleration;
+            accX = normalizedAccX * maxAcceleration;
+            accY = normalizedAccY * maxAcceleration;
         }
 
         // Calculate desired velocity after acceleration
@@ -99,15 +105,8 @@ public class Zombie extends Enemy {
         velX = (float) newVelX;
         velY = (float) newVelY;
 
-        // Checking for collision in the next frame
-        collision = false;
-        CollisionChecker.getInstance().checkTile(this);
-        int collisionIndex = CollisionChecker.getInstance().checkEntityCollision(this, ENTITIES);
-        handlePlayerCollision(collisionIndex);
-
-        // Executing the movement
-        posX += velX;
-        posY += velY;
+        bounds.x = (int) (posX + hitBox.x + velX);
+        bounds.y = (int) (posY + hitBox.y + velY);
 
 
         if (invincible) {
@@ -119,14 +118,10 @@ public class Zombie extends Enemy {
         }
     }
 
-    public void handlePlayerCollision(int index) {
-        if (index != -1) {
-            if (ENTITIES.get(index) instanceof Player) {
-                if (!Player.getInstance().invincible) {
-                    Player.getInstance().health -= 1;
-                    Player.getInstance().invincible = true;
-                }
-            }
-        }
+    @Override
+    public void execute() {
+        // Executing the movement
+        posX += velX;
+        posY += velY;
     }
 }

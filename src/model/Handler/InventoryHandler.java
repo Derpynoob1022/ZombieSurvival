@@ -1,4 +1,8 @@
-package model;
+package model.Handler;
+
+import model.Items.GoldenSword;
+import model.Items.Item;
+import model.Slot;
 
 import static ui.GamePanel.*;
 
@@ -48,11 +52,10 @@ public class InventoryHandler {
         inventory[i].setItem(item);
     }
 
-    // TODO: implement grabbing item in inventory
     public void update() {
         if (MouseHandler.getInstance().isClicked()) {
-            Double mouseX = MouseHandler.getInstance().x;
-            Double mouseY = MouseHandler.getInstance().y;
+            double mouseX = MouseHandler.getInstance().getX();
+            double mouseY = MouseHandler.getInstance().getY();
 
             if (!grabbedItem) {
                 for (Slot slot : inventory) {
@@ -61,7 +64,6 @@ public class InventoryHandler {
                             selectedItem = slot.getItem();
                             grabbedItem = true;
                             slot.removeItem();
-                            // System.out.println("grabbed item");
                             break;  // Exit loop after grabbing an item
                         }
                     }
@@ -73,12 +75,10 @@ public class InventoryHandler {
                             slot.setItem(selectedItem);
                             selectedItem = null;
                             grabbedItem = false;
-                            // System.out.println("replaced empty slot");
-                        } else if (slot.getItem() != null) {
+                        } else {
                             Item temp = slot.getItem();
                             slot.setItem(selectedItem);
                             selectedItem = temp;
-                        // System.out.println("picked up new item");
                         }
                         break;  // Exit loop after placing an item
                     }

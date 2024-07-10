@@ -1,4 +1,6 @@
-package model;
+package model.Items;
+
+import model.Handler.Helper;
 
 import java.awt.*;
 

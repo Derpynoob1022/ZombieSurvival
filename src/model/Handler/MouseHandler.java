@@ -1,21 +1,22 @@
-package model;
+package model.Handler;
 
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 
+
 public class MouseHandler implements MouseListener, MouseMotionListener {
-    private static MouseHandler mH = new MouseHandler();
-    public double x;
-    public double y;
-    public boolean pressed;
+    private static MouseHandler instance = new MouseHandler();
+    private double x;
+    private double y;
+    private boolean pressed;
     private boolean clicked;
 
     private MouseHandler() {
     }
 
     public static MouseHandler getInstance() {
-        return mH;
+        return instance;
     }
 
     @Override
@@ -50,7 +51,6 @@ public class MouseHandler implements MouseListener, MouseMotionListener {
         if (pressed) {
             x = e.getX();
             y = e.getY();
-//            System.out.println(x);
         }
     }
 
@@ -58,6 +58,18 @@ public class MouseHandler implements MouseListener, MouseMotionListener {
     public void mouseMoved(MouseEvent e) {
         x = e.getX();
         y = e.getY();
+    }
+
+    public double getX() {
+        return x;
+    }
+
+    public double getY() {
+        return y;
+    }
+
+    public boolean isPressed() {
+        return pressed;
     }
 
     public boolean isClicked() {

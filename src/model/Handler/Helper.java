@@ -1,4 +1,6 @@
-package model;
+package model.Handler;
+
+import model.Entities.Player;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -8,7 +10,6 @@ import java.io.IOException;
 import static ui.GamePanel.TILESIZE;
 
 public class Helper {
-
     // Method to draw a BufferedImage
     public static void draw(Graphics2D g2, BufferedImage img, float posX, float posY) {
         Player player = Player.getInstance();
@@ -34,10 +35,10 @@ public class Helper {
 
     // Helper method to check if an object is within the player's view
     private static boolean isWithinPlayerView(Player player, float posX, float posY) {
-        return posX + 2 * TILESIZE > player.posX - player.getScreenX() &&
-                posX - 2 * TILESIZE < player.posX + player.getScreenX() &&
-                posY + 2 * TILESIZE > player.posY - player.getScreenY() &&
-                posY - 2 * TILESIZE < player.posY + player.getScreenY();
+        return posX + 2 * TILESIZE > player.getPosX() - player.getScreenX() &&
+                posX - 2 * TILESIZE < player.getPosX() + player.getScreenX() &&
+                posY + 2 * TILESIZE > player.getPosY() - player.getScreenY() &&
+                posY - 2 * TILESIZE < player.getPosY() + player.getScreenY();
     }
 
 

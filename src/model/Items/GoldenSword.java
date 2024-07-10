@@ -1,4 +1,7 @@
-package model;
+package model.Items;
+
+import model.Entities.Sword;
+import model.Handler.Helper;
 
 import java.awt.*;
 
@@ -17,6 +20,7 @@ public class GoldenSword extends Sword {
         this.damage = 3;
         this.attackWidth = TILESIZE;
         this.attackHeight = 2 * TILESIZE;
+        this.bounds = new Rectangle((int) posX + hitBox.x, (int) posY + hitBox.y, hitBox.width, hitBox.height);
     }
 
     // In inventory

@@ -1,4 +1,7 @@
-package model;
+package model.Handler;
+
+import model.Entities.Player;
+import model.Tile;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -84,27 +87,26 @@ public class Tiles {
     }
 
     public void draw(Graphics2D g2) {
+        Player player = Player.getInstance();
 
-        int worldCol = 0;
-        int worldRow = 0;
+        // Calculate the bounds of the render screen based on the player's position
+        int startCol = Math.max(0, (int) (player.getPosX() - player.getScreenX()) / TILESIZE - 2);
+        int endCol = Math.min(WORLD_MAXCOL, (int) (player.getPosX() + player.getScreenX()) / TILESIZE + 2);
+        int startRow = Math.max(0, (int) (player.getPosY() - player.getScreenY()) / TILESIZE - 2);
+        int endRow = Math.min(WORLD_MAXROW, (int) (player.getPosY() + player.getScreenY()) / TILESIZE + 2);
 
-        while (worldCol < WORLD_MAXCOL && worldRow < WORLD_MAXROW) {
+        // Iterate only through the tiles within the calculated bounds
+        for (int col = startCol; col <= endCol; col++) {
+            for (int row = startRow; row <= endRow; row++) {
+                int tileNum = mapTile[col][row];
+                int posX = col * TILESIZE;
+                int posY = row * TILESIZE;
 
-            int tileNum = mapTile[worldCol][worldRow];
-
-            int posX = worldCol * TILESIZE;
-            int posY = worldRow * TILESIZE;
-
-            Helper.draw(g2, listTiles[tileNum].tileImage, posX, posY);
-
-            worldCol++;
-
-
-            if (worldCol == WORLD_MAXCOL) {
-                worldCol = 0;
-                worldRow++;
-
+                float screenX = posX - player.getPosX() + player.getScreenX();
+                float screenY = posY - player.getPosY() + player.getScreenY();
+                g2.drawImage(listTiles[tileNum].tileImage, (int) screenX, (int) screenY, null);
             }
         }
     }
+
 }

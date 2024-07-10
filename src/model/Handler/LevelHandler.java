@@ -1,4 +1,4 @@
-package model;
+package model.Handler;
 
 public class LevelHandler {
 }

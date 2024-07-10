@@ -1,5 +1,7 @@
 package model;
 
+import model.Items.Item;
+
 import java.awt.*;
 
 import static ui.GamePanel.TILESIZE;

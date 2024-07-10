@@ -1,6 +1,9 @@
 package ui;
 
-import model.*;
+import model.Handler.*;
+import model.Items.Item;
+import model.Entities.Player;
+import model.Slot;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -10,11 +13,13 @@ import java.io.IOException;
 import static ui.GamePanel.*;
 
 public class Ui {
-    public BufferedImage heart_empty;
-    public BufferedImage heart_half;
-    public BufferedImage heart_full;
-    public BufferedImage hotbarBackground;
-    public BufferedImage hotbarBackgroundSelected;
+    private BufferedImage heart_empty;
+    private BufferedImage heart_half;
+    private BufferedImage heart_full;
+    private BufferedImage hotbarBackground;
+    private BufferedImage hotbarBackgroundSelected;
+    public static Font arial_80 = new Font("Arial", Font.BOLD, 80);
+    public static Font arial_30 = new Font("Arial", Font.PLAIN, 30);
 
     public Ui() {
         heart_empty = setup("/objects/heart_empty", TILESIZE, TILESIZE);
@@ -127,13 +132,33 @@ public class Ui {
         }
 
         if (InventoryHandler.getInstance().getGrabbedItem()) {
-            int mouseX = (int) MouseHandler.getInstance().x;
-            int mouseY = (int) MouseHandler.getInstance().y;
+            int mouseX = (int) MouseHandler.getInstance().getX();
+            int mouseY = (int) MouseHandler.getInstance().getY();
             Item item = InventoryHandler.getInstance().getSelectedItem();
             int centeringX = item.getImage().getWidth() / 2;
             int centeringY = item.getImage().getHeight() / 2;
             g2.drawImage(item.getImage(), mouseX - centeringX, mouseY - centeringY, null);
         }
+    }
+
+    public void drawPause(Graphics2D g2){
+        g2.setColor(Color.darkGray);
+        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,0.9f));
+        g2.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+        PauseHandler.getInstance().draw(g2);
+        g2.setFont(arial_80);
+        g2.setColor(Color.white);
+        String text = "Paused";
+        g2.drawString(text, getXforCenteredText(g2, text), 200);
+    }
+
+    // TODO: implement those 2 methods
+    public void drawSettings(Graphics2D g2) {
+
+    }
+
+    public void drawTitle(Graphics2D g2) {
+
     }
 
     public BufferedImage setup(String imagePath, int width, int height) {
@@ -147,5 +172,32 @@ public class Ui {
             e.printStackTrace();
         }
         return image;
+    }
+
+    public int getXforCenteredText(Graphics2D g2, String text){
+
+        int length = (int)g2.getFontMetrics().getStringBounds(text, g2).getWidth();
+        int x = SCREEN_WIDTH/2 - length/2;
+        return x;
+    }
+
+    public BufferedImage getHeart_empty() {
+        return heart_empty;
+    }
+
+    public BufferedImage getHeart_half() {
+        return heart_half;
+    }
+
+    public BufferedImage getHeart_full() {
+        return heart_full;
+    }
+
+    public BufferedImage getHotbarBackground() {
+        return hotbarBackground;
+    }
+
+    public BufferedImage getHotbarBackgroundSelected() {
+        return hotbarBackgroundSelected;
     }
 }

@@ -1,5 +1,7 @@
 package model;
 
+import model.Handler.Helper;
+
 import java.awt.image.BufferedImage;
 
 import static ui.GamePanel.TILESIZE;
