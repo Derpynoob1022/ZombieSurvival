@@ -1,7 +1,8 @@
 package model.Handler;
 
-import model.Items.GoldenSword;
+import model.Items.Melee.GoldenSword;
 import model.Items.Item;
+import model.Items.Ranged.WoodenBow;
 import model.Slot;
 
 import static ui.GamePanel.*;
@@ -25,7 +26,9 @@ public class InventoryHandler {
             }
             y -= TILESIZE;
         }
+        // Give the player a golden sword
         inventory[0].setItem(new GoldenSword());
+        inventory[1].setItem(new WoodenBow());
     }
 
     public static InventoryHandler getInstance() {
@@ -84,7 +87,6 @@ public class InventoryHandler {
                     }
                 }
             }
-
             MouseHandler.getInstance().resetClicked();
         }
     }

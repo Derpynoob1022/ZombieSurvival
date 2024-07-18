@@ -2,14 +2,16 @@ package model.Entities;
 
 import model.Handler.Helper;
 import model.Items.Coin;
-import model.Items.GoldenSword;
+import model.Items.Melee.AnimeSword;
+import model.Items.Melee.GoldenSword;
+import model.Items.Ranged.WoodenBow;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 
-import static ui.GamePanel.*;
+import static ui.GamePanel.TILESIZE;
+import static ui.GamePanel.getDroppedItems;
 
 public class Zombie extends Enemy {
     // private Helper helper = new Helper();
@@ -22,48 +24,72 @@ public class Zombie extends Enemy {
         hitBox = new Rectangle(12, 12, 40, 40);
         maxAcceleration = 0.2f;
         mass = 1;
-        health = 5;
-        maxHealth = 5;
+        maxHealth = 10;
+        health = maxHealth;
 
         bounds = new Rectangle((int) posX + hitBox.x, (int) posY + hitBox.y, hitBox.width, hitBox.height);
-    }
-
-    public void draw(Graphics2D g2) {
         try {
-            BufferedImage scaledImage = Helper.scaleImage(ImageIO.read(getClass().getResourceAsStream("/enemy/zombie/zombie0.png")), TILESIZE, TILESIZE);
-
-            Helper.draw(g2, scaledImage, (int) posX, (int) posY);
-
-            int posXHealth = (int) posX;
-            int posYHealth = (int) posY - 10;
-            int healthLeft = TILESIZE * health / maxHealth;
-
-            Helper.draw(g2, Color.red, posXHealth, posYHealth, TILESIZE, 5);
-
-            if (health > 0) {
-                Helper.draw(g2, Color.green, posXHealth, posYHealth, healthLeft, 5);
-            }
+            scaledImage = Helper.scaleImage(ImageIO.read(getClass().getResourceAsStream("/enemy/zombie/zombie0.png")), TILESIZE, TILESIZE);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    public void draw(Graphics2D g2) {
+        Helper.draw(g2, scaledImage, (int) posX, (int) posY);
+
+        int posXHealth = (int) posX;
+        int posYHealth = (int) posY - 10;
+        int healthLeft = TILESIZE * health / maxHealth;
+
+        Helper.draw(g2, Color.red, posXHealth, posYHealth, TILESIZE, 5);
+
+        if (health > 0) {
+            Helper.draw(g2, Color.green, posXHealth, posYHealth, healthLeft, 5);
+        }
+    }
+
     @Override
     public void dropLoot() {
-        int variantX = (int) (Math.random() * TILESIZE);
-        int variantY = (int) (Math.random() * TILESIZE);
-        getDroppedItems().add(new Coin(posX + variantX, posY + variantY));
+        for (int i = 0; i < 3; i++) {
+            int variantX = (int) (Math.random() * TILESIZE);
+            int variantY = (int) (Math.random() * TILESIZE);
+            getDroppedItems().add(new Coin(posX + variantX, posY + variantY));
+        }
 
         // between 1 and 60
-        int chance = (int) Math.floor(Math.random() * 60) + 1;
+        int chance = (int) Math.floor(Math.random() * 100) + 1;
 
-        // 50% chance of dropping a sword
-        if (chance > 30) {
-            variantX = (int) (Math.random() * TILESIZE);
-            variantY = (int) (Math.random() * TILESIZE);
+        // 30% chance of dropping a sword
+        if (chance < 30) {
+            int variantX = (int) (Math.random() * TILESIZE);
+            int variantY = (int) (Math.random() * TILESIZE);
             getDroppedItems().add(new GoldenSword(posX + variantX, posY + variantY));
         }
-        // System.out.println("Dropped loot");
+
+        chance = (int) Math.floor(Math.random() * 100) + 1;
+
+        if (chance < 5) {
+            int variantX = (int) (Math.random() * TILESIZE);
+            int variantY = (int) (Math.random() * TILESIZE);
+            getDroppedItems().add(new AnimeSword(posX + variantX, posY + variantY));
+        }
+
+        chance = (int) Math.floor(Math.random() * 100) + 1;
+
+        if (chance < 10) {
+            int variantX = (int) (Math.random() * TILESIZE);
+            int variantY = (int) (Math.random() * TILESIZE);
+            getDroppedItems().add(new WoodenBow(posX + variantX, posY + variantY));
+        }
+
+        chance = (int) Math.floor(Math.random() * 100) + 1;
+
+        if (chance < 5) {
+            int variantX = (int) (Math.random() * TILESIZE);
+            int variantY = (int) (Math.random() * TILESIZE);
+            getDroppedItems().add(new WoodenBow(posX + variantX, posY + variantY));
+        }
     }
 
     @Override
@@ -111,7 +137,7 @@ public class Zombie extends Enemy {
 
         if (invincible) {
             iFrames++;
-            if (iFrames > 60) {
+            if (iFrames > 10) {
                 invincible = false;
                 iFrames = 0;
             }

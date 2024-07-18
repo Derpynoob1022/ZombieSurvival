@@ -4,17 +4,20 @@ import model.Entities.Player;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
 import static ui.GamePanel.TILESIZE;
 
 public class Helper {
+    //  MADE PLAYER A STATIC VARIABLE HERE, CAUSE LAG??
+    private static Player player = Player.getInstance();
+
     // Method to draw a BufferedImage
     public static void draw(Graphics2D g2, BufferedImage img, float posX, float posY) {
-        Player player = Player.getInstance();
 
-        if (isWithinPlayerView(player, posX, posY)) {
+        if (isWithinPlayerView(posX, posY)) {
             float screenX = posX - player.getPosX() + player.getScreenX();
             float screenY = posY - player.getPosY() + player.getScreenY();
             g2.drawImage(img, (int) screenX, (int) screenY, null);
@@ -23,9 +26,8 @@ public class Helper {
 
     // Method to draw a Rectangle as a filled rectangle
     public static void draw(Graphics2D g2, Color color, float posX, float posY, int width, int height) {
-        Player player = Player.getInstance();
 
-        if (isWithinPlayerView(player, posX, posY)) {
+        if (isWithinPlayerView(posX, posY)) {
             float screenX = posX - player.getPosX() + player.getScreenX();
             float screenY = posY - player.getPosY() + player.getScreenY();
             g2.setColor(color);
@@ -33,8 +35,31 @@ public class Helper {
         }
     }
 
+    public static void draw(Graphics2D g2, BufferedImage image, float posX, float posY, double angle) {
+        if (isWithinPlayerView(posX, posY)) {
+            float screenX = posX - player.getPosX() + player.getScreenX();
+            float screenY = posY - player.getPosY() + player.getScreenY();
+
+            int imageWidth = image.getWidth();
+            int imageHeight = image.getHeight();
+
+            // Create a new transform for drawing
+            AffineTransform drawTransform = new AffineTransform();
+
+            // Translate to the screen coordinates first
+            drawTransform.translate(screenX, screenY);
+
+            // Rotate around the origin of the image (center of the image)
+            drawTransform.rotate(angle + Math.PI / 2, imageWidth / 2.0, imageHeight / 2.0);
+
+            // Draw the image using the transformed graphics context
+            g2.drawImage(image, drawTransform, null);
+        }
+    }
+
+
     // Helper method to check if an object is within the player's view
-    private static boolean isWithinPlayerView(Player player, float posX, float posY) {
+    public static boolean isWithinPlayerView(float posX, float posY) {
         return posX + 2 * TILESIZE > player.getPosX() - player.getScreenX() &&
                 posX - 2 * TILESIZE < player.getPosX() + player.getScreenX() &&
                 posY + 2 * TILESIZE > player.getPosY() - player.getScreenY() &&
@@ -52,12 +77,12 @@ public class Helper {
         return scaledImage;
     }
 
-    public BufferedImage setup(String imagePath, int width, int height) {
+    public static BufferedImage setup(String imagePath, int width, int height) {
         BufferedImage image = null;
 
         try {
             // Load the image using the class loader
-            image = ImageIO.read(getClass().getClassLoader().getResourceAsStream(imagePath + ".png"));
+            image = ImageIO.read(Helper.class.getClassLoader().getResourceAsStream(imagePath + ".png"));
             image = scaleImage(image, width, height);
         } catch (IOException e) {
             e.printStackTrace();

@@ -1,7 +1,13 @@
 package model.Entities;
 
-import model.Handler.*;
+import model.Handler.Helper;
+import model.Handler.InventoryHandler;
+import model.Handler.KeyHandler;
+import model.Handler.MouseHandler;
 import model.Items.Item;
+import model.Items.Melee.Sword;
+import model.Items.Ranged.Bow;
+import model.Items.Weapon;
 import model.Slot;
 
 import javax.imageio.ImageIO;
@@ -21,7 +27,7 @@ public class Player extends Entity {
     private boolean attackCD;
     private int attackCDCount;
     private double angle;
-    private int maxAttackDuration = 5;
+    private int maxAttackDuration = 3;
     private int curAttackDuration = 0;
     private int coin;
     private Item selectedItem;
@@ -30,13 +36,13 @@ public class Player extends Entity {
     private Player() {
         helper = new Helper();
         posX = 0;
-        posY = TILESIZE;
+        posY = 0;
         moveSpeed = 6;
         maxAcceleration = 1;
         screenX = SCREEN_WIDTH / 2 - TILESIZE / 2;
         screenY = SCREEN_HEIGHT / 2 - TILESIZE / 2;
         maxHealth = 10;
-        health = 10;
+        health = 100;
         mass = 10;
 
         hitBox = new Rectangle(12, 12, 40, 40);
@@ -55,7 +61,7 @@ public class Player extends Entity {
         boolean keyPressedA = KeyHandler.getInstance().isKeyPressed(KeyEvent.VK_A);
         boolean keyPressedS = KeyHandler.getInstance().isKeyPressed(KeyEvent.VK_S);
         boolean keyPressedD = KeyHandler.getInstance().isKeyPressed(KeyEvent.VK_D);
-        boolean clicked = MouseHandler.getInstance().isPressed();
+        boolean pressed = MouseHandler.getInstance().isPressed();
 
         selectedItem = InventoryHandler.getInstance().getItem(KeyHandler.getInstance().getLastNumberKeyPressed() - 1);
 
@@ -119,7 +125,7 @@ public class Player extends Entity {
             curAttackDuration++;
         }
 
-        // If attack animation exceeds the max, its going to set the attackArea to null
+        // If attack animation exceeds the max, it's going to set the attackArea to null
         if (curAttackDuration > maxAttackDuration) {
             attackArea = null;
             curAttackDuration = 0;
@@ -134,21 +140,18 @@ public class Player extends Entity {
             }
         }
 
-        // attacking if character is holding a sword
-        if (selectedItem instanceof Sword) {
+        // attacking if character is holding a weapon
+        if (selectedItem instanceof Weapon) {
             if (!attackCD) {
-                if (clicked) {
+                if (pressed) {
                     attack();
                 }
-            }
-        }
-
-        // timer to attack again
-        if (attackCD) {
-            attackCDCount++;
-            if (attackCDCount > 20) {
-                attackCD = false;
-                attackCDCount = 0;
+            } else {
+                attackCDCount++;
+                if (attackCDCount > ((Weapon) selectedItem).getAttackCoolDown()) {
+                    attackCD = false;
+                    attackCDCount = 0;
+                }
             }
         }
     }
@@ -181,14 +184,13 @@ public class Player extends Entity {
     }
 
     public void attack() {
+        angle = Math.atan2(MouseHandler.getInstance().getY() - SCREEN_HEIGHT / 2, MouseHandler.getInstance().getX() - SCREEN_WIDTH / 2);
         if (selectedItem instanceof Sword) {
             // TODO: add custom attack area depending on the weapon
-            angle = Math.atan2(MouseHandler.getInstance().getY() - SCREEN_HEIGHT / 2, MouseHandler.getInstance().getX() - SCREEN_WIDTH / 2);
             attackArea = new AttackShape(posX + TILESIZE / 2, posY + TILESIZE / 2, TILESIZE * 2, TILESIZE, angle);
             attackCD = true;
-        } else {
-            // Set attackArea to null when not using a Sword
-            attackArea = null;
+        } else if (selectedItem instanceof Bow) {
+            ((Bow) selectedItem).shoot(posX, posY, angle);
             attackCD = true; // Depending on your logic
         }
     }
@@ -256,5 +258,9 @@ public class Player extends Entity {
 
     public AttackShape getAttackArea() {
         return attackArea;
+    }
+
+    public int getCoin() {
+        return coin;
     }
 }

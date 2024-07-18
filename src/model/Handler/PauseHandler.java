@@ -2,6 +2,7 @@ package model.Handler;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.List;
 
 import static ui.GamePanel.*;
 
@@ -9,17 +10,17 @@ public class PauseHandler {
     private GameButton exitButton;
     private GameButton optionsButton;
     private GameButton backButton;
-    private ArrayList<GameButton> buttons;
+    private List<UIComponents> uiComponents;
     private static PauseHandler pauseHandler = new PauseHandler();
 
     private PauseHandler() {
-        buttons = new ArrayList<>();
+        uiComponents = new ArrayList<>();
         backButton = new GameButton((SCREEN_WIDTH - TILESIZE * 5) / 2, SCREEN_HEIGHT / 2 - TILESIZE, TILESIZE * 5, TILESIZE, "Back to Game");
         optionsButton = new GameButton((SCREEN_WIDTH - TILESIZE * 5) / 2, SCREEN_HEIGHT / 2 - TILESIZE + TILESIZE + 5, TILESIZE * 5, TILESIZE, "Options");
         exitButton = new GameButton((SCREEN_WIDTH - TILESIZE * 5) / 2, SCREEN_HEIGHT / 2 - TILESIZE + 2 * TILESIZE + 10, TILESIZE * 5, TILESIZE, "Save and Quit game");
-        buttons.add(exitButton);
-        buttons.add(backButton);
-        buttons.add(optionsButton);
+        uiComponents.add(exitButton);
+        uiComponents.add(backButton);
+        uiComponents.add(optionsButton);
     }
 
     public static PauseHandler getInstance() {
@@ -31,7 +32,7 @@ public class PauseHandler {
         float mouseY = (float) MouseHandler.getInstance().getY();
         boolean mouseClicked = MouseHandler.getInstance().isClicked();
 
-        for (GameButton g : buttons) {
+        for (UIComponents g : uiComponents) {
             g.update(mouseX, mouseY, mouseClicked);
         }
 
@@ -46,14 +47,13 @@ public class PauseHandler {
         }
 
         if (exitButton.isClicked()) {
-            System.out.println("Jerry ate 5 meals today");
+            GAMESTATE = GameState.title;
             MouseHandler.getInstance().resetClicked();
-            System.exit(0);
         }
     }
 
     public void draw(Graphics2D g2) {
-        for (GameButton g : buttons) {
+        for (UIComponents g : uiComponents) {
             g.draw(g2);
         }
     }

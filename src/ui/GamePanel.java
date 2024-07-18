@@ -6,6 +6,7 @@ import model.Entities.Player;
 import model.Entities.Zombie;
 import model.Handler.*;
 import model.Items.Item;
+import model.Items.Ranged.Projectiles;
 
 import javax.swing.*;
 import java.awt.*;
@@ -23,27 +24,33 @@ public class GamePanel extends JPanel implements Runnable {
     public static final int WORLD_MAXCOL = 100;
     public static final int WORLD_WIDTH = WORLD_MAXCOL * TILESIZE;
     public static final int WORLD_HEIGHT = WORLD_MAXROW * TILESIZE;
-    public static GameState GAMESTATE = GameState.play;
+    public static GameState GAMESTATE;
     private static ArrayList<Entity> entities = new ArrayList<>();
     private static ArrayList<Item> droppedItems = new ArrayList<>();
+    private static ArrayList<Projectiles> projectiles = new ArrayList<>();
     public static BufferedImage GAME_SNAPSHOT;
     private Thread updateThread;
     private Thread drawThread;
     private static final int FPS = 60;
-    private static final double NS_PER_UPDATE = 1000000000.0 / FPS;
     private Ui ui = new Ui();
-    private volatile boolean running = true;
+
 
     public GamePanel() {
         this.setPreferredSize(new Dimension(SCREEN_WIDTH, SCREEN_HEIGHT));
         this.setBackground(Color.black);
         this.setDoubleBuffered(true);
         this.setFocusable(true);
+        GAMESTATE = GameState.title;
         this.addKeyListener(KeyHandler.getInstance());
-        setup();
-        startThreads();
         this.addMouseListener(MouseHandler.getInstance());
         this.addMouseMotionListener(MouseHandler.getInstance());
+        setup();
+        startThreads();
+    }
+
+    @Override
+    public void run() {
+        startThreads();
     }
 
     private void startThreads() {
@@ -55,76 +62,60 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     private void updateLoop() {
-        long lastTime = System.nanoTime();
-        double delta = 0;
-        long timer = System.currentTimeMillis();
-        int updates = 0;
+        double delay = 1000000000 / FPS;
+        double nextStopTime = System.nanoTime() + delay;
 
-        while (running) {
-            long now = System.nanoTime();
-            delta += (now - lastTime) / NS_PER_UPDATE;
-            lastTime = now;
+        while (updateThread != null) {
+            update();
 
-            while (delta >= 1) {
-                update();
-                updates++;
-                delta--;
-            }
+            try {
 
-            if (System.currentTimeMillis() - timer >= 1000) {
-                System.out.println("Updates per second (UPS): " + updates);
-                updates = 0;
-                timer += 1000;
+                double remainingTime = nextStopTime - System.nanoTime();
+                remainingTime = remainingTime/1000000;
+
+                if (remainingTime < 0) {
+                    remainingTime = 0;
+                }
+
+                Thread.sleep((long) remainingTime);
+                nextStopTime += delay;
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
     }
 
     private void drawLoop() {
-        long lastTime = System.nanoTime();
-        long timer = System.currentTimeMillis();
-        int frames = 0;
+        double delay = 1000000000 / (FPS);
+        double nextStopTime = System.nanoTime() + delay;
 
-        while (running) {
-            long now = System.nanoTime();
-            double delta = (now - lastTime) / NS_PER_UPDATE;
-            lastTime = now;
-
-            if (delta >= 1) {
-                repaint();
-                frames++;
-            }
-
-            if (System.currentTimeMillis() - timer >= 1000) {
-                System.out.println("Frames per second (FPS): " + frames);
-                frames = 0;
-                timer += 1000;
-            }
+        while (drawThread != null) {
+            repaint();
 
             try {
-                long sleepTime = (long)(NS_PER_UPDATE - (System.nanoTime() - now)) / 1000000;
-                if (sleepTime > 0) {
-                    Thread.sleep(sleepTime);
+
+                double remainingTime = nextStopTime - System.nanoTime();
+                remainingTime = remainingTime/1000000;
+
+                if (remainingTime < 0) {
+                    remainingTime = 0;
                 }
+
+                Thread.sleep((long) remainingTime);
+                nextStopTime += delay;
+
             } catch (InterruptedException e) {
                 e.printStackTrace();
-                running = false; // Stop threads on interruption
             }
         }
-    }
-
-
-    @Override
-    public void run() {
-        startThreads();
     }
 
     private void setup() {
-        entities = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            entities.add(new Zombie((int) (Math.random() * 10) * TILESIZE, (int) (Math.random() * 10) * TILESIZE));
+        for (int i = 0; i < 10; i++) {
+            entities.add(new Zombie((int) (Math.random() * 20) * TILESIZE, (int) (Math.random() * 20) * TILESIZE));
         }
         entities.add(Player.getInstance());
-        droppedItems = new ArrayList<>();
     }
 
     public synchronized void update() {
@@ -145,6 +136,10 @@ public class GamePanel extends JPanel implements Runnable {
                     e.execute();
                 }
 
+                for (Projectiles p : projectiles) {
+                    p.execute();
+                }
+
                 Iterator<Entity> iterator = entities.iterator();
                 while (iterator.hasNext()) {
                     Entity e = iterator.next();
@@ -160,6 +155,12 @@ public class GamePanel extends JPanel implements Runnable {
                 break;
             case pause:
                 PauseHandler.getInstance().update();
+                break;
+            case title:
+                TitleHandler.getInstance().update();
+                break;
+            case settings:
+                SettingsHandler.getInstance().update();
                 break;
         }
     }
@@ -192,6 +193,14 @@ public class GamePanel extends JPanel implements Runnable {
                 ui.drawInventory(g2);
                 g2.dispose();
                 break;
+            case title:
+                ui.drawTitle(g2);
+                g2.dispose();
+                break;
+            case settings:
+                ui.drawSettings(g2);
+                g2.dispose();
+                break;
         }
     }
 
@@ -204,6 +213,10 @@ public class GamePanel extends JPanel implements Runnable {
 
         for (Entity e : entities) {
             e.draw(g2);
+        }
+
+        for (Projectiles p : projectiles) {
+            p.draw(g2);
         }
     }
 
@@ -222,6 +235,10 @@ public class GamePanel extends JPanel implements Runnable {
 
     public static ArrayList<Item> getDroppedItems() {
         return droppedItems;
+    }
+
+    public static ArrayList<Projectiles> getProjectiles() {
+        return projectiles;
     }
 }
 

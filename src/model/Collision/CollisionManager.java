@@ -1,10 +1,15 @@
 package model.Collision;
 
-import model.Entities.*;
+import model.Entities.AttackShape;
+import model.Entities.Enemy;
+import model.Entities.Entity;
+import model.Entities.Player;
+import model.Handler.Tiles;
 import model.Items.Coin;
 import model.Items.Item;
+import model.Items.Melee.Sword;
+import model.Items.Ranged.Projectiles;
 import model.Tile;
-import model.Handler.Tiles;
 
 import java.awt.*;
 import java.util.List;
@@ -38,11 +43,19 @@ public class CollisionManager {
             checkTile(entity);
         }
 
+        Iterator<Projectiles> iterator = getProjectiles().iterator();
+        while(iterator.hasNext()) {
+            Projectiles proj = iterator.next();
+            checkTile(proj);
+            if (checkTile(proj)) {
+                iterator.remove();
+            }
+            quadtree.insert(proj);
+        }
+
         if (player.getAttackArea() != null) {
             quadtree.insert(player.getAttackArea());
         }
-
-        quadtree.insert(player);
 
         // Handle collisions
         handleCollisions();
@@ -53,6 +66,9 @@ public class CollisionManager {
 
 
     private void handleCollisions() {
+        // Set to store pairs of checked entities
+        Set<String> checkedPairs = new HashSet<>();
+
         for (Entity entity : getEntities()) {
             List<Collidable> potentialCollisions = new ArrayList<>();
             quadtree.retrieve(potentialCollisions, entity);
@@ -61,16 +77,24 @@ public class CollisionManager {
                 if (collidable instanceof Entity) {
                     Entity other = (Entity) collidable;
 
-                    if (entity != other && entity.getBounds().intersects(other.getBounds())) {
-                        applyImpulse(entity, other);
-                        checkTile(entity);
-                        checkTile(other);
-                        if (collidable instanceof Player && entity instanceof Enemy) {
-                            ((Enemy) entity).handlePlayerCollision();
+                    // Generate a unique key for the pair
+                    String pairKey = generatePairKey(entity, other);
+
+                    // Check if this pair has already been checked
+                    if (!checkedPairs.contains(pairKey)) {
+                        // Mark this pair as checked
+                        checkedPairs.add(pairKey);
+
+                        if (entity != other && entity.getBounds().intersects(other.getBounds())) {
+                            applyImpulse(entity, other);
+                            checkTile(entity);
+                            checkTile(other);
+                            if (collidable instanceof Player && entity instanceof Enemy) {
+                                ((Enemy) entity).handlePlayerCollision();
+                            }
                         }
                     }
-                }
-                if (collidable instanceof AttackShape) {
+                } else if (collidable instanceof AttackShape) {
                     if (player.getAttackArea() != null && player.getAttackArea().intersects(entity.getBounds())) {
                         if (entity instanceof Enemy) {
                             if (!entity.isInvincible()) {
@@ -79,10 +103,35 @@ public class CollisionManager {
                             }
                         }
                     }
+                } else if (collidable instanceof Projectiles) {
+                    if (collidable.getBounds().intersects(entity.getBounds())) {
+                        if (entity instanceof Enemy) {
+                            if (!entity.isInvincible()) {
+                                // Testing damage
+                                Projectiles proj = (Projectiles) collidable;
+                                proj.addCurNumPierce();
+                                if (proj.getCurNumPierce() >= proj.getMaxNumPierce()) {
+                                    getProjectiles().remove(collidable);
+                                }
+                                // Currently looking at only bow damage
+                                entity.hit(proj.getDamage());
+                                entity.setInvincible(true);
+                            }
+                        }
+                    }
                 }
             }
         }
     }
+
+    private String generatePairKey(Entity entity1, Entity entity2) {
+        int id1 = System.identityHashCode(entity1);
+        int id2 = System.identityHashCode(entity2);
+
+        // Ensure the key is always in the same order
+        return id1 < id2 ? id1 + "-" + id2 : id2 + "-" + id1;
+    }
+
 
     private void applyImpulse(Entity entity, Entity other) {
         float overlapX = entity.getBounds().x - other.getBounds().x;
@@ -172,6 +221,73 @@ public class CollisionManager {
             // Handle the exception if the entity is out of bounds
         }
     }
+
+    private boolean checkTile(Projectiles proj) {
+        int entityLeftWorldX = proj.getBounds().x;
+        int entityRightWorldX = proj.getBounds().x + proj.getBounds().width;
+        int entityTopWorldY = proj.getBounds().y;
+        int entityBottomWorldY = proj.getBounds().y + proj.getBounds().height;
+
+        int entityLeftCol = entityLeftWorldX / TILESIZE;
+        int entityRightCol = entityRightWorldX / TILESIZE;
+        int entityTopRow = entityTopWorldY / TILESIZE;
+        int entityBottomRow = entityBottomWorldY / TILESIZE;
+
+        int roundedVelX = proj.getVelX() >= 0 ? (int) Math.ceil(proj.getVelX()) : (int) Math.floor(proj.getVelX());
+        int roundedVelY = proj.getVelY() >= 0 ? (int) Math.ceil(proj.getVelY()) : (int) Math.floor(proj.getVelY());
+
+        Tile[] currentTileList = Tiles.getInstance().getListTiles();
+        int[][] currentMapTile = Tiles.getInstance().getMapTile();
+
+
+        try {
+            if (proj.getVelX() != 0) {
+                int nextCol = proj.getVelX() > 0 ? (entityRightWorldX + roundedVelX) / TILESIZE : (entityLeftWorldX + roundedVelX) / TILESIZE;
+                Tile nextTile1 = currentTileList[currentMapTile[nextCol][entityTopRow]];
+                Tile nextTile2 = currentTileList[currentMapTile[nextCol][entityBottomRow]];
+
+                if (nextTile1.hasCollision || nextTile2.hasCollision) {
+                    return true;
+                }
+            }
+
+            if (proj.getVelY() != 0) {
+                int nextRow = proj.getVelY() > 0 ? (entityBottomWorldY + roundedVelY) / TILESIZE : (entityTopWorldY + roundedVelY) / TILESIZE;
+                Tile nextTile1 = currentTileList[currentMapTile[entityLeftCol][nextRow]];
+                Tile nextTile2 = currentTileList[currentMapTile[entityRightCol][nextRow]];
+
+                if (nextTile1.hasCollision || nextTile2.hasCollision) {
+                    System.out.println("updown");
+                    return true;
+                }
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            return true;
+        }
+        return false;
+    }
+
+
+    public void checkItemPickUp() {
+        Iterator<Item> iterator = getDroppedItems().iterator();
+        while (iterator.hasNext()) {
+            Item i = iterator.next();
+            if (player.getBounds().intersects(i.getHitbox())) {
+                if (i instanceof Coin) {
+                    // is a coin
+                    player.addCoin();
+                    iterator.remove();
+                } else {
+                    // other items (sword)
+                    if (player.addItem(i)) {
+                        iterator.remove();
+                    }
+                }
+            }
+        }
+    }
+}
+
 
     //    private void handleEntityCollision(Entity entity, Entity other) {
 //        // Calculate the new velocities based on a simple elastic collision model
@@ -403,23 +519,3 @@ public class CollisionManager {
 //
 //        entity.collision = true;
 //    }
-
-    public void checkItemPickUp() {
-        Iterator<Item> iterator = getDroppedItems().iterator();
-        while (iterator.hasNext()) {
-            Item i = iterator.next();
-            if (player.getBounds().intersects(i.getHitbox())) {
-                if (i instanceof Coin) {
-                    // is a coin
-                    player.addCoin();
-                    iterator.remove();
-                } else {
-                    // other items (sword)
-                    if (player.addItem(i)) {
-                        iterator.remove();
-                    }
-                }
-            }
-        }
-    }
-}

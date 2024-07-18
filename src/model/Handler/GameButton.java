@@ -4,7 +4,7 @@ import java.awt.*;
 
 import static ui.Ui.*;
 
-public class GameButton {
+public class GameButton implements UIComponents {
     private Rectangle hitbox;
     private String text;
     private boolean isHovered;
@@ -15,13 +15,12 @@ public class GameButton {
         this.text = text;
     }
 
-    public void update(float x, float y, boolean mousePressed) {
+    public void update(float x, float y, boolean mousedClicked) {
         isHovered = hitbox.contains(x, y);
-        isClicked = isHovered && mousePressed;
+        isClicked = isHovered && mousedClicked;
     }
 
     public void draw(Graphics2D g2) {
-        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,1));
         if (isHovered) {
             g2.setColor(Color.GRAY);
         } else {

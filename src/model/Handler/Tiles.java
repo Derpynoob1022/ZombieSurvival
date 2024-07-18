@@ -91,9 +91,9 @@ public class Tiles {
 
         // Calculate the bounds of the render screen based on the player's position
         int startCol = Math.max(0, (int) (player.getPosX() - player.getScreenX()) / TILESIZE - 2);
-        int endCol = Math.min(WORLD_MAXCOL, (int) (player.getPosX() + player.getScreenX()) / TILESIZE + 2);
+        int endCol = Math.min(WORLD_MAXCOL - 1, (int) (player.getPosX() + player.getScreenX()) / TILESIZE + 2);
         int startRow = Math.max(0, (int) (player.getPosY() - player.getScreenY()) / TILESIZE - 2);
-        int endRow = Math.min(WORLD_MAXROW, (int) (player.getPosY() + player.getScreenY()) / TILESIZE + 2);
+        int endRow = Math.min(WORLD_MAXROW - 1, (int) (player.getPosY() + player.getScreenY()) / TILESIZE + 2);
 
         // Iterate only through the tiles within the calculated bounds
         for (int col = startCol; col <= endCol; col++) {
@@ -108,5 +108,4 @@ public class Tiles {
             }
         }
     }
-
 }

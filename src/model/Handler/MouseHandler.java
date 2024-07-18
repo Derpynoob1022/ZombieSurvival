@@ -11,6 +11,7 @@ public class MouseHandler implements MouseListener, MouseMotionListener {
     private double y;
     private boolean pressed;
     private boolean clicked;
+    private boolean isDragging;
 
     private MouseHandler() {
     }
@@ -21,9 +22,7 @@ public class MouseHandler implements MouseListener, MouseMotionListener {
 
     @Override
     public void mouseClicked(MouseEvent e) {
-        x = e.getX();
-        y = e.getY();
-        clicked = true;
+
     }
 
     @Override
@@ -31,11 +30,26 @@ public class MouseHandler implements MouseListener, MouseMotionListener {
         x = e.getX();
         y = e.getY();
         pressed = true;
+        clicked = true; // Set clicked to true when the mouse is pressed
     }
 
     @Override
     public void mouseReleased(MouseEvent e) {
         pressed = false;
+        clicked = false;
+    }
+
+    @Override
+    public void mouseDragged(MouseEvent e) {
+        x = e.getX();
+        y = e.getY();
+        clicked = false;
+    }
+
+    @Override
+    public void mouseMoved(MouseEvent e) {
+        x = e.getX();
+        y = e.getY();
     }
 
     @Override
@@ -44,20 +58,6 @@ public class MouseHandler implements MouseListener, MouseMotionListener {
 
     @Override
     public void mouseExited(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseDragged(MouseEvent e) {
-        if (pressed) {
-            x = e.getX();
-            y = e.getY();
-        }
-    }
-
-    @Override
-    public void mouseMoved(MouseEvent e) {
-        x = e.getX();
-        y = e.getY();
     }
 
     public double getX() {

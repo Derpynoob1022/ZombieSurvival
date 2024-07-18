@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Quadtree {
-    private static final int MAX_OBJECTS = 4;
-    private static final int MAX_LEVELS = 8;
+    private static final int MAX_OBJECTS = 6;
+    private static final int MAX_LEVELS = 4;
 
     private int level;
     private List<Collidable> objects;
@@ -78,6 +78,9 @@ public class Quadtree {
         }
 
         objects.add(collidable);
+
+        // System.out.println("Inserted " + collidable + " into level " + level + " at bounds " + bounds);
+
 
         if (objects.size() > MAX_OBJECTS && level < MAX_LEVELS) {
             if (nodes[0] == null) {

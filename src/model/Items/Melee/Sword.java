@@ -1,15 +1,10 @@
-package model.Entities;
+package model.Items.Melee;
 
-import model.Items.Item;
+import model.Items.Weapon;
 
-public class Sword extends Item {
-    protected int damage;
+public class Sword extends Weapon {
     protected int attackWidth;
     protected int attackHeight;
-
-    public int getDamage() {
-        return damage;
-    }
 
     public int getAttackWidth() {
         return attackWidth;

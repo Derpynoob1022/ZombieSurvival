@@ -1,8 +1,8 @@
 package ui;
 
+import model.Entities.Player;
 import model.Handler.*;
 import model.Items.Item;
-import model.Entities.Player;
 import model.Slot;
 
 import javax.imageio.ImageIO;
@@ -18,6 +18,7 @@ public class Ui {
     private BufferedImage heart_full;
     private BufferedImage hotbarBackground;
     private BufferedImage hotbarBackgroundSelected;
+    private BufferedImage coin;
     public static Font arial_80 = new Font("Arial", Font.BOLD, 80);
     public static Font arial_30 = new Font("Arial", Font.PLAIN, 30);
 
@@ -27,6 +28,7 @@ public class Ui {
         heart_full = setup("/objects/heart_full", TILESIZE, TILESIZE);
         hotbarBackground = setup("/background/hotbar", TILESIZE, TILESIZE);
         hotbarBackgroundSelected = setup("/background/highlightedHotbar", TILESIZE + 14, TILESIZE + 14);
+        coin = setup("/objects/coin", TILESIZE / 4, TILESIZE / 4);
     }
 
     public void draw(Graphics2D g2) {
@@ -70,6 +72,7 @@ public class Ui {
         g2.drawImage(hotbarBackgroundSelected, x, y, null);
 
 
+        g2.setColor(Color.red);
         x = TILESIZE / 2 + 5;
         y = TILESIZE / 2 + 15;
         // drawing number on the hotbar
@@ -85,20 +88,33 @@ public class Ui {
         for (i = 0; i < 8; i++) {
             Slot slot = Player.getInstance().getInventory()[i];
             if (slot != null && slot.getItem() != null) {
-                // centering the image
                 BufferedImage slotImage = slot.getItem().getImage();
+                // centering the image
                 int centeringX = (TILESIZE - slotImage.getWidth()) / 2;
                 int centeringY = (TILESIZE - slotImage.getHeight()) / 2;
                 g2.drawImage(slotImage, x + centeringX, y + centeringY, null);
             }
             x += TILESIZE;
         }
+
+        x = TILESIZE / 2;
+        y = TILESIZE * 2;
+
+        g2.drawImage(coin, x, y, null);
+
+        g2.setColor(Color.GREEN);
+        x += TILESIZE / 2;
+        y += TILESIZE / 5;
+        String text = "Coins: " + Player.getInstance().getCoin();
+        g2.drawString(text, x, y);
+
     }
 
     public void drawInventory(Graphics2D g2) {
         g2.setColor(Color.darkGray);
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,0.9f));
         g2.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,1));
 
         int x;
         int y = SCREEN_HEIGHT / 2 + TILESIZE * 2;
@@ -154,11 +170,15 @@ public class Ui {
 
     // TODO: implement those 2 methods
     public void drawSettings(Graphics2D g2) {
-
+        SettingsHandler.getInstance().draw(g2);
     }
 
     public void drawTitle(Graphics2D g2) {
-
+        g2.setColor(Color.white);
+        g2.setFont(arial_80);
+        String text = "Zombie Game";
+        g2.drawString(text, getXforCenteredText(g2, text), 200);
+        TitleHandler.getInstance().draw(g2);
     }
 
     public BufferedImage setup(String imagePath, int width, int height) {

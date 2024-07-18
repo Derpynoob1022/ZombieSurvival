@@ -3,6 +3,7 @@ package model.Entities;
 import model.Collision.Collidable;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
 
 public abstract class Entity implements Collidable {
     protected float posX;
@@ -13,11 +14,12 @@ public abstract class Entity implements Collidable {
     protected int moveSpeed;
     protected float maxAcceleration;
     protected Rectangle hitBox;
+    protected Rectangle bounds;
     protected int health;
     protected boolean invincible;
     protected int iFrames;
     protected int maxHealth;
-    protected Rectangle bounds;
+    protected BufferedImage scaledImage;
     public abstract void draw(Graphics2D g2);
 
     public abstract void update();

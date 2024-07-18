@@ -10,8 +10,8 @@ public abstract class Item implements Collidable {
     protected float posX;
     protected float posY;
     protected BufferedImage image;
-    protected Rectangle hitBox;
     protected String name;
+    protected Rectangle hitBox;
     protected Rectangle bounds;
 
     public void draw(Graphics2D g2) {
