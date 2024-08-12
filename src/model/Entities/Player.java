@@ -1,21 +1,19 @@
 package model.Entities;
 
-import model.Handler.Helper;
-import model.Handler.InventoryHandler;
 import model.Handler.KeyHandler;
 import model.Handler.MouseHandler;
-import model.Items.Item;
-import model.Items.Melee.Sword;
-import model.Items.Ranged.Bow;
-import model.Items.Weapon;
-import model.Slot;
+import model.Handler.StateHandler.ControlHandler;
+import model.Helper;
+import model.Inventory.Inventoriable;
+import model.Inventory.InventoryHandler;
+import model.Inventory.Slot;
+import model.Items.Weapons.Melee.Sword;
+import model.Items.Weapons.Ranged.RangedWeapon;
+import model.Items.Weapons.Weapon;
 
-import javax.imageio.ImageIO;
 import java.awt.*;
-import java.awt.event.KeyEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 
 import static ui.GamePanel.*;
 
@@ -24,29 +22,29 @@ public class Player extends Entity {
     private final int screenY;
     private static Player player = new Player();
     private AttackShape attackArea;
-    private boolean attackCD;
-    private int attackCDCount;
     private double angle;
     private int maxAttackDuration = 3;
     private int curAttackDuration = 0;
     private int coin;
-    private Item selectedItem;
-    private Helper helper;
+    private Inventoriable selectedItem;
+    private BufferedImage scaledImage;
+    // TODO: add a bigger range to pickup
+    private Rectangle pickupBox;
+    private int xp;
 
     private Player() {
-        helper = new Helper();
-        posX = 0;
-        posY = 0;
-        moveSpeed = 6;
+        scaledImage = Helper.setup("entity/player", TILESIZE, TILESIZE);
+        posX = TILESIZE;
+        posY = TILESIZE;
+        moveSpeed = 4;
         maxAcceleration = 1;
-        screenX = SCREEN_WIDTH / 2 - TILESIZE / 2;
-        screenY = SCREEN_HEIGHT / 2 - TILESIZE / 2;
-        maxHealth = 10;
-        health = 100;
-        mass = 10;
-
         hitBox = new Rectangle(12, 12, 40, 40);
         bounds = new Rectangle((int) posX + hitBox.x, (int) posY + hitBox.y, hitBox.width, hitBox.height);
+        screenX = SCREEN_WIDTH / 2 - scaledImage.getWidth() / 2;
+        screenY = SCREEN_HEIGHT / 2 - scaledImage.getHeight() / 2;
+        maxHealth = 100;
+        health = 100;
+        mass = 10;
         coin = 0;
         selectedItem = InventoryHandler.getInstance().getItem(KeyHandler.getInstance().getLastNumberKeyPressed());
     }
@@ -57,11 +55,11 @@ public class Player extends Entity {
 
     @Override
     public void update() {
-        boolean keyPressedW = KeyHandler.getInstance().isKeyPressed(KeyEvent.VK_W);
-        boolean keyPressedA = KeyHandler.getInstance().isKeyPressed(KeyEvent.VK_A);
-        boolean keyPressedS = KeyHandler.getInstance().isKeyPressed(KeyEvent.VK_S);
-        boolean keyPressedD = KeyHandler.getInstance().isKeyPressed(KeyEvent.VK_D);
-        boolean pressed = MouseHandler.getInstance().isPressed();
+        boolean keyPressedW = KeyHandler.getInstance().isKeyPressed(ControlHandler.getInstance().getMoveUpKeycode());
+        boolean keyPressedA = KeyHandler.getInstance().isKeyPressed(ControlHandler.getInstance().getMoveLeftKeycode());
+        boolean keyPressedS = KeyHandler.getInstance().isKeyPressed(ControlHandler.getInstance().getMoveDownKeycode());
+        boolean keyPressedD = KeyHandler.getInstance().isKeyPressed(ControlHandler.getInstance().getMoveRightKeycode());
+        boolean leftPressed = MouseHandler.getInstance().isLeftPressed();
 
         selectedItem = InventoryHandler.getInstance().getItem(KeyHandler.getInstance().getLastNumberKeyPressed() - 1);
 
@@ -142,99 +140,91 @@ public class Player extends Entity {
 
         // attacking if character is holding a weapon
         if (selectedItem instanceof Weapon) {
-            if (!attackCD) {
-                if (pressed) {
+            Weapon curWeapon = ((Weapon) selectedItem);
+            if (curWeapon.getCurrentAttackCount() > curWeapon.getMaxAttackCooldownCount()) {
+                if (leftPressed) {
                     attack();
+                    curWeapon.resetCurrentAttackCount();
                 }
-            } else {
-                attackCDCount++;
-                if (attackCDCount > ((Weapon) selectedItem).getAttackCoolDown()) {
-                    attackCD = false;
-                    attackCDCount = 0;
-                }
+            }
+        }
+        addWeaponCoolDownCount();
+    }
+
+    public void addWeaponCoolDownCount() {
+        for (Slot slot : getInventory()) {
+            if (slot != null && slot.getItem() instanceof Weapon) {
+                ((Weapon) slot.getItem()).addCurrentAttackCount();
             }
         }
     }
 
-    @Override
-    public void execute() {
-        // Executing the movement
-        posX += velX;
-        posY += velY;
+    public void addXp(int i) {
+        xp += i;
     }
 
-    @Override
-    public void dropLoot() {
-        // Player doesn't drop any loot
+    public int getXp() {
+        return xp;
     }
 
     public void draw(Graphics2D g2) {
-        try {
-            BufferedImage scaledImage = Helper.scaleImage(ImageIO.read(getClass().getResourceAsStream("/enemy/player.png")), TILESIZE, TILESIZE);
+        Helper.draw(g2, scaledImage, (int) posX, (int) posY);
 
-            Helper.draw(g2, scaledImage, (int) posX, (int) posY);
-
-            // TODO: maybe change this so that its not null but it just doesn't draw or deal damage when not attacking
-            if (attackArea != null) {
-                drawAttack(g2);
-            }
-        } catch (IOException e) {
-
+        // TODO: maybe change this so that its not null but it just doesn't draw or deal damage when not attacking
+        if (attackArea != null) {
+            drawAttack(g2);
         }
     }
 
     public void attack() {
+        float centerX = posX + hitBox.x + hitBox.width / 2;
+        float centerY = posY + hitBox.y + hitBox.height / 2;
         angle = Math.atan2(MouseHandler.getInstance().getY() - SCREEN_HEIGHT / 2, MouseHandler.getInstance().getX() - SCREEN_WIDTH / 2);
         if (selectedItem instanceof Sword) {
             // TODO: add custom attack area depending on the weapon
             attackArea = new AttackShape(posX + TILESIZE / 2, posY + TILESIZE / 2, TILESIZE * 2, TILESIZE, angle);
-            attackCD = true;
-        } else if (selectedItem instanceof Bow) {
-            ((Bow) selectedItem).shoot(posX, posY, angle);
-            attackCD = true; // Depending on your logic
+        } else if (selectedItem instanceof RangedWeapon) {
+            ((RangedWeapon) selectedItem).shoot(centerX, centerY, angle);
         }
     }
 
-
-    public boolean addItem(Item item) {
-        for (int i = 0; i < InventoryHandler.getInstance().getInventory().length; i++) {
-            if (InventoryHandler.getInstance().getItem(i) == null) { // Find the first empty slot
-                InventoryHandler.getInstance().addItem(i, item); // Add the new item
-                return true;
-            }
-        }
-        return false;
-    }
 
     public void drawAttack(Graphics2D g2) {
-        Sword currentWeapon = (Sword) selectedItem;
-        BufferedImage attack = helper.scaleImage(currentWeapon.getImage(), currentWeapon.getAttackWidth(), currentWeapon.getAttackHeight());
+        if (selectedItem instanceof Sword) {
+            Sword currentWeapon = (Sword) selectedItem;
+            BufferedImage attack = Helper.scaleImage(currentWeapon.getImage(), currentWeapon.getAttackWidth(), currentWeapon.getAttackHeight());
 
-        // Calculate center of the screen
-        int centerX = SCREEN_WIDTH / 2;
-        int centerY = SCREEN_HEIGHT / 2;
+            // Calculate center of the screen
+            int centerX = SCREEN_WIDTH / 2;
+            int centerY = SCREEN_HEIGHT / 2;
 
-        // Calculate the bottom middle point of the image
-        int imageWidth = attack.getWidth();
-        int imageHeight = attack.getHeight();
-        int bottomMiddleX = imageWidth / 2;
-        int bottomMiddleY = imageHeight;
+            // Calculate the bottom middle point of the image
+            int imageWidth = attack.getWidth();
+            int imageHeight = attack.getHeight();
+            int bottomMiddleX = imageWidth / 2;
+            int bottomMiddleY = imageHeight;
 
-        // Create a new transform for drawing centered on the screen
-        AffineTransform drawTransform = new AffineTransform();
+            // Create a new transform for drawing centered on the screen
+            AffineTransform drawTransform = new AffineTransform();
 
-        // Translate to the center of the screen first
-        drawTransform.translate(centerX - bottomMiddleX, centerY - bottomMiddleY);
+            // Translate to the center of the screen first
+            drawTransform.translate(centerX - bottomMiddleX, centerY - bottomMiddleY);
 
-        // Rotate around the bottom middle point of the image
-        drawTransform.rotate(angle + Math.PI / 2, bottomMiddleX, bottomMiddleY);
+            // Rotate around the bottom middle point of the image
+            drawTransform.rotate(angle + Math.PI / 2, bottomMiddleX, bottomMiddleY);
 
-        // Translate the image so that the bottom middle point is at the origin
-        // drawTransform.translate(-bottomMiddleX, -bottomMiddleY);
+            // Translate the image so that the bottom middle point is at the origin
+            // drawTransform.translate(-bottomMiddleX, -bottomMiddleY);
 
-        // Draw the image using the transformed graphics context
-        g2.drawImage(attack, drawTransform, null);
+            // Draw the image using the transformed graphics context
+            g2.drawImage(attack, drawTransform, null);
+        }
     }
+
+    public int getLevel() {
+        return (int) Math.floor(Math.sqrt(xp/25 + 12.25) - 3.5);
+    }
+
 
     public int getScreenX() {
         return screenX;
@@ -248,11 +238,11 @@ public class Player extends Entity {
         return InventoryHandler.getInstance().getInventory();
     }
 
-    public void addCoin() {
-        this.coin++;
+    public void addCoin(int amount) {
+        this.coin += amount;
     }
 
-    public Item getSelectedItem() {
+    public Inventoriable getSelectedItem() {
         return selectedItem;
     }
 
@@ -262,5 +252,22 @@ public class Player extends Entity {
 
     public int getCoin() {
         return coin;
+    }
+
+    public void addHealth(int amount) {
+        health += amount;
+    }
+
+    public void reset() {
+        InventoryHandler.getInstance().reset();
+        posX = 0;
+        posY = 0;
+        moveSpeed = 4;
+        maxAcceleration = 1;
+        bounds = new Rectangle((int) posX + hitBox.x, (int) posY + hitBox.y, hitBox.width, hitBox.height);
+        maxHealth = 10;
+        health = 10;
+        mass = 10;
+        coin = 0;
     }
 }

@@ -1,5 +1,5 @@
 package model.Handler;
 
 public enum GameState {
-    play, inventory, pause, title, settings,
+    play, inventory, pause, title, settings, death, characterSelection, control
 }

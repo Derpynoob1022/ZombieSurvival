@@ -20,9 +20,18 @@ public abstract class Entity implements Collidable {
     protected int iFrames;
     protected int maxHealth;
     protected BufferedImage scaledImage;
+    protected int xp;
     public abstract void draw(Graphics2D g2);
-
     public abstract void update();
+
+    public void execute() {
+        // Executing the movement
+        posX += velX;
+        posY += velY;
+
+        bounds.x = (int) posX + hitBox.x;
+        bounds.y = (int) posY + hitBox.y;
+    }
 
     public float getPosX() {
         return posX;
@@ -40,14 +49,6 @@ public abstract class Entity implements Collidable {
         return velY;
     }
 
-    public float getMaxAcceleration() {
-        return maxAcceleration;
-    }
-
-    public int getMoveSpeed() {
-        return moveSpeed;
-    }
-
     public void setPosX(float posX) {
         this.posX = posX;
     }
@@ -60,20 +61,8 @@ public abstract class Entity implements Collidable {
         this.velX = velX;
     }
 
-    public void setMass(int mass) {
-        this.mass = mass;
-    }
-
     public void setVelY(float velY) {
         this.velY = velY;
-    }
-
-    public void setMoveSpeed(int moveSpeed) {
-        this.moveSpeed = moveSpeed;
-    }
-
-    public void setMaxAcceleration(float maxAcceleration) {
-        this.maxAcceleration = maxAcceleration;
     }
 
     public void setHitBox(Rectangle hitBox) {
@@ -88,18 +77,9 @@ public abstract class Entity implements Collidable {
         this.invincible = invincible;
     }
 
-    public void setiFrames(int iFrames) {
-        this.iFrames = iFrames;
-    }
-
-    public void setMaxHealth(int maxHealth) {
-        this.maxHealth = maxHealth;
-    }
-
     public void setBounds(Rectangle bounds) {
         this.bounds = bounds;
     }
-
 
     public Rectangle getHitBox() {
         return hitBox;
@@ -107,10 +87,6 @@ public abstract class Entity implements Collidable {
 
     public boolean isInvincible() {
         return invincible;
-    }
-
-    public int getiFrames() {
-        return iFrames;
     }
 
     public int getHealth() {
@@ -132,11 +108,12 @@ public abstract class Entity implements Collidable {
     public Rectangle getBounds() {
         return bounds;
     }
-    public abstract void execute();
-
-    public abstract void dropLoot();
 
     public int getMass() {
         return mass;
+    }
+
+    public int getXpDrop() {
+        return xp;
     }
 }

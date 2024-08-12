@@ -5,8 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Quadtree {
-    private static final int MAX_OBJECTS = 6;
-    private static final int MAX_LEVELS = 4;
+    // Setting the max object per subdivided region and max iterations
+    private static final int MAX_OBJECTS = 8;
+    private static final int MAX_LEVELS = 5;
 
     private int level;
     private List<Collidable> objects;
@@ -20,6 +21,7 @@ public class Quadtree {
         this.nodes = new Quadtree[4];
     }
 
+    // Clears the tree
     public void clear() {
         objects.clear();
         for (int i = 0; i < nodes.length; i++) {
@@ -30,6 +32,7 @@ public class Quadtree {
         }
     }
 
+    // If the collidables in one region exceeds the max, then subdivide it once more and add 1 to the "depth" or level
     private void split() {
         int subWidth = bounds.width / 2;
         int subHeight = bounds.height / 2;
@@ -42,6 +45,7 @@ public class Quadtree {
         nodes[3] = new Quadtree(level + 1, new Rectangle(x + subWidth, y + subHeight, subWidth, subHeight));
     }
 
+    // Finds which quadrants the collidable should go to
     private int getIndex(Rectangle pRect) {
         int index = -1;
         double verticalMidpoint = bounds.x + (bounds.width / 2);
@@ -67,7 +71,9 @@ public class Quadtree {
         return index;
     }
 
+    // Inserts the collidable into the tree
     public void insert(Collidable collidable) {
+        // If it has a child, then pass the collidable to the child
         if (nodes[0] != null) {
             int index = getIndex(collidable.getBounds());
 
@@ -77,16 +83,18 @@ public class Quadtree {
             }
         }
 
+        // If it doesn't have child, add to current
         objects.add(collidable);
 
         // System.out.println("Inserted " + collidable + " into level " + level + " at bounds " + bounds);
 
-
+        // If the current objects in the region exceeds the max, subdivide into 4 more regions inside
         if (objects.size() > MAX_OBJECTS && level < MAX_LEVELS) {
             if (nodes[0] == null) {
                 split();
             }
 
+            // Relay all the objects in the current region and pass it onto the correct node, the clears the list of objects
             int i = 0;
             while (i < objects.size()) {
                 int index = getIndex(objects.get(i).getBounds());
@@ -99,6 +107,7 @@ public class Quadtree {
         }
     }
 
+    // Returns the possible collisions by filling in the list passed into this method
     public List<Collidable> retrieve(List<Collidable> returnObjects, Collidable collidable) {
         int index = getIndex(collidable.getBounds());
         if (index != -1 && nodes[0] != null) {

@@ -1,12 +1,19 @@
 package ui;
 
+import model.Background.Tiles;
+import model.Blocks.Block;
 import model.Collision.CollisionManager;
+import model.Inventory.InventoryHandler;
+import model.Items.DroppedItem;
+import model.Entities.Enemy;
 import model.Entities.Entity;
 import model.Entities.Player;
-import model.Entities.Zombie;
 import model.Handler.*;
-import model.Items.Item;
-import model.Items.Ranged.Projectiles;
+import model.Handler.StateHandler.*;
+import model.AOE.Explosion;
+import model.Items.Projectiles.Projectiles;
+import model.Items.PowerUp;
+import model.Blocks.WoodWall;
 
 import javax.swing.*;
 import java.awt.*;
@@ -20,14 +27,17 @@ public class GamePanel extends JPanel implements Runnable {
     public static final int SCREEN_MAXCOL = 18;
     public static final int SCREEN_WIDTH = TILESIZE * SCREEN_MAXCOL;
     public static final int SCREEN_HEIGHT = TILESIZE * SCREEN_MAXROW;
-    public static final int WORLD_MAXROW = 100;
-    public static final int WORLD_MAXCOL = 100;
+    public static final int WORLD_MAXROW = 102;
+    public static final int WORLD_MAXCOL = 102;
     public static final int WORLD_WIDTH = WORLD_MAXCOL * TILESIZE;
     public static final int WORLD_HEIGHT = WORLD_MAXROW * TILESIZE;
     public static GameState GAMESTATE;
     private static ArrayList<Entity> entities = new ArrayList<>();
-    private static ArrayList<Item> droppedItems = new ArrayList<>();
+    private static ArrayList<DroppedItem> droppedItems = new ArrayList<>();
+    private static ArrayList<PowerUp> powerUps = new ArrayList<>();
     private static ArrayList<Projectiles> projectiles = new ArrayList<>();
+    private static ArrayList<Block> blocks = new ArrayList<>();
+    private static ArrayList<Explosion> explosions = new ArrayList<>();
     public static BufferedImage GAME_SNAPSHOT;
     private Thread updateThread;
     private Thread drawThread;
@@ -36,6 +46,7 @@ public class GamePanel extends JPanel implements Runnable {
 
 
     public GamePanel() {
+        // Set the JFrame to the correct configuration
         this.setPreferredSize(new Dimension(SCREEN_WIDTH, SCREEN_HEIGHT));
         this.setBackground(Color.black);
         this.setDoubleBuffered(true);
@@ -44,7 +55,9 @@ public class GamePanel extends JPanel implements Runnable {
         this.addKeyListener(KeyHandler.getInstance());
         this.addMouseListener(MouseHandler.getInstance());
         this.addMouseMotionListener(MouseHandler.getInstance());
-        setup();
+        this.addMouseWheelListener(MouseHandler.getInstance());
+
+        setup();        // Any additional setup
         startThreads();
     }
 
@@ -53,7 +66,18 @@ public class GamePanel extends JPanel implements Runnable {
         startThreads();
     }
 
+    private void setup() {
+        blocks.add(new WoodWall(2, 2));
+        blocks.add(new WoodWall(2, 1));
+        blocks.add(new WoodWall(2, 3));
+        blocks.add(new WoodWall(2, 4));
+        blocks.add(new WoodWall(2, 5));
+        blocks.add(new WoodWall(2, 6));
+        entities.add(Player.getInstance());
+    }
+
     private void startThreads() {
+        // Start the threads (one for drawing and another for updating)
         updateThread = new Thread(this::updateLoop);
         drawThread = new Thread(this::drawLoop);
 
@@ -77,7 +101,7 @@ public class GamePanel extends JPanel implements Runnable {
                     remainingTime = 0;
                 }
 
-                Thread.sleep((long) remainingTime);
+                Thread.sleep((long) remainingTime); // Stops updating for the remaining time
                 nextStopTime += delay;
 
             } catch (InterruptedException e) {
@@ -102,7 +126,7 @@ public class GamePanel extends JPanel implements Runnable {
                     remainingTime = 0;
                 }
 
-                Thread.sleep((long) remainingTime);
+                Thread.sleep((long) remainingTime); // Stops updating for the remaining time
                 nextStopTime += delay;
 
             } catch (InterruptedException e) {
@@ -111,27 +135,37 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
 
-    private void setup() {
-        for (int i = 0; i < 10; i++) {
-            entities.add(new Zombie((int) (Math.random() * 20) * TILESIZE, (int) (Math.random() * 20) * TILESIZE));
-        }
-        entities.add(Player.getInstance());
-    }
-
     public synchronized void update() {
+        // TODO: Maybe refactor this playstate into another class called PlayHandler
         switch (GAMESTATE) {
             case play:
                 for (Entity e : entities) {
                     e.update();
                 }
 
-                CollisionManager.getInstance().update();
-
-                // Player dies
-                if (Player.getInstance().getHealth() <= 0) {
-                    System.exit(0);
+                for (Explosion e: explosions) {
+                    e.update();
                 }
 
+                // Explosion update returns true if it's timer ran out, removes from the list currently updating.
+                Iterator<Explosion> iteratorExplosion = explosions.iterator();
+                while (iteratorExplosion.hasNext()) {
+                    Explosion e = iteratorExplosion.next();
+                    if (e.update()) {
+                        iteratorExplosion.remove();
+                    }
+                }
+
+                // Manages all the collision detection
+                CollisionManager.getInstance().update();
+
+                // If the player dies, switches GAMESTATE to death screen.
+                // TODO: add a death screen
+                if (Player.getInstance().getHealth() <= 0) {
+                    GAMESTATE = GameState.death;
+                }
+
+                // Executes the movement and updates after resolving all the collisions
                 for (Entity e : entities) {
                     e.execute();
                 }
@@ -140,16 +174,47 @@ public class GamePanel extends JPanel implements Runnable {
                     p.execute();
                 }
 
-                Iterator<Entity> iterator = entities.iterator();
-                while (iterator.hasNext()) {
-                    Entity e = iterator.next();
-                    if (e.getHealth() <= 0) {
-                        e.dropLoot();
-                        iterator.remove();
+                // Remove enemies after their health falls to 0
+                Iterator<Entity> iteratorEntity = entities.iterator();
+                while (iteratorEntity.hasNext()) {
+                    Entity e = iteratorEntity.next();
+                    if (e.getHealth() <= 0 && e instanceof Enemy) {
+                        ((Enemy) e).dropLoot();
+                        Player.getInstance().addXp(e.getXpDrop());
+                        iteratorEntity.remove();
                     }
                 }
-                break;
 
+                // Despawn items on the ground after a while, so it doesn't lag
+                Iterator<DroppedItem> iteratorItem = droppedItems.iterator();
+                while (iteratorItem.hasNext()) {
+                    DroppedItem e = iteratorItem.next();
+                    e.addGroundCount();
+                    e.addPickUpCount();
+                    // Dropped item disappear after a while
+                    if (e.getGroundCount() > 1200) {
+                        iteratorItem.remove();
+                    }
+                }
+
+                // Despawn items on the ground after a while, so it doesn't lag
+                Iterator<PowerUp> iteratorPowerUps = powerUps.iterator();
+                while (iteratorItem.hasNext()) {
+                    DroppedItem e = iteratorItem.next();
+                    e.addGroundCount();
+                    // Dropped item disappear after a while
+                    if (e.getGroundCount() > 3600) {
+                        iteratorItem.remove();
+                    }
+                }
+
+                // If only player is left standing, adds another level and spawns the respective mobs
+                if (entities.size() == 1) {
+                    LevelHandler.getInstance().addLevel();
+                    LevelHandler.getInstance().spawn();
+                }
+
+                break;
             case inventory:
                 InventoryHandler.getInstance().update();
                 break;
@@ -161,6 +226,12 @@ public class GamePanel extends JPanel implements Runnable {
                 break;
             case settings:
                 SettingsHandler.getInstance().update();
+                break;
+            case control:
+                ControlHandler.getInstance().update();
+                break;
+            case death:
+                DeathHandler.getInstance().update();
                 break;
         }
     }
@@ -175,15 +246,16 @@ public class GamePanel extends JPanel implements Runnable {
             case play:
                 renderBackground(g2);
                 ui.draw(g2);
-                g2.dispose();
+                if (GAME_SNAPSHOT != null) {
+                    GAME_SNAPSHOT = null; // Reset the snapshot
+                }
                 break;
             case pause:
                 if (GAME_SNAPSHOT == null) {
-                    takeSnapshot();
+                    takeSnapshot(); // Generates a screenshot of the play-screen, so it gets displayed in the background without keep regenerating the image.
                 }
                 g2.drawImage(GAME_SNAPSHOT, 0, 0, null);
                 ui.drawPause(g2);
-                g2.dispose();
                 break;
             case inventory:
                 if (GAME_SNAPSHOT == null) {
@@ -191,24 +263,42 @@ public class GamePanel extends JPanel implements Runnable {
                 }
                 g2.drawImage(GAME_SNAPSHOT, 0, 0, null);
                 ui.drawInventory(g2);
-                g2.dispose();
                 break;
             case title:
                 ui.drawTitle(g2);
-                g2.dispose();
                 break;
             case settings:
                 ui.drawSettings(g2);
-                g2.dispose();
+                break;
+            case control:
+                ui.drawControl(g2);
+                break;
+            case death:
+                ui.drawDeath(g2);
                 break;
         }
+
+        g2.dispose(); // Disposes all the graphical objects
     }
 
     private void renderBackground(Graphics2D g2) {
+        // Renders all the objects in the game
         Tiles.getInstance().draw(g2);
 
-        for (Item i : droppedItems) {
+        for (Explosion c : explosions) {
+            c.draw(g2);
+        }
+
+        for (Block b : blocks) {
+            b.draw(g2);
+        }
+
+        for (DroppedItem i : droppedItems) {
             i.draw(g2);
+        }
+
+        for (PowerUp p : powerUps) {
+            p.draw(g2);
         }
 
         for (Entity e : entities) {
@@ -233,218 +323,23 @@ public class GamePanel extends JPanel implements Runnable {
         return entities;
     }
 
-    public static ArrayList<Item> getDroppedItems() {
+    public static ArrayList<DroppedItem> getDroppedItems() {
         return droppedItems;
     }
 
     public static ArrayList<Projectiles> getProjectiles() {
         return projectiles;
     }
+
+    public static ArrayList<Block> getBlocks() {
+        return blocks;
+    }
+
+    public static ArrayList<Explosion> getExplosions() {
+        return explosions;
+    }
+
+    public static ArrayList<PowerUp> getPowerUps() {
+        return powerUps;
+    }
 }
-
-
-
-//package ui;
-//
-//import model.Collision.CollisionManager;
-//import model.Entities.Entity;
-//import model.Entities.Player;
-//import model.Entities.Zombie;
-//import model.Handler.*;
-//import model.Items.Item;
-//
-//import javax.swing.*;
-//import java.awt.*;
-//import java.awt.image.BufferedImage;
-//import java.util.ArrayList;
-//import java.util.Iterator;
-//import java.util.concurrent.ExecutorService;
-//import java.util.concurrent.Executors;
-//
-//public class GamePanel extends JPanel implements Runnable {
-//    public static final int TILESIZE = 64;
-//    public static final int SCREEN_MAXROW = 14;
-//    public static final int SCREEN_MAXCOL = 18;
-//    public static final int SCREEN_WIDTH = TILESIZE * SCREEN_MAXCOL;
-//    public static final int SCREEN_HEIGHT = TILESIZE * SCREEN_MAXROW;
-//    public static final int WORLD_MAXROW = 100;
-//    public static final int WORLD_MAXCOL = 100;
-//    public static final int WORLD_WIDTH = WORLD_MAXCOL * TILESIZE;
-//    public static final int WORLD_HEIGHT = WORLD_MAXROW * TILESIZE;
-//    public static volatile GameState GAMESTATE = GameState.play;
-//    private static ArrayList<Entity> entities = new ArrayList<>();
-//    private static ArrayList<Item> droppedItems = new ArrayList<>();
-//    public static BufferedImage GAME_SNAPSHOT;
-//    private Thread gameThread;
-//    private final int FPS = 60;
-//    private Ui ui = new Ui();
-//    private ExecutorService updateExecutor;
-//
-//    public GamePanel() {
-//        this.setPreferredSize(new Dimension(SCREEN_WIDTH, SCREEN_HEIGHT));
-//        this.setBackground(Color.black);
-//        this.setDoubleBuffered(true);
-//        this.setFocusable(true);
-//        this.addKeyListener(KeyHandler.getInstance());
-//        setup();
-//        this.startGameThread();
-//        this.addMouseListener(MouseHandler.getInstance());
-//        this.addMouseMotionListener(MouseHandler.getInstance());
-//
-//        // Create a fixed thread pool for update tasks
-//        int numThreads = Runtime.getRuntime().availableProcessors(); // Use available cores
-//        updateExecutor = Executors.newFixedThreadPool(numThreads);
-//    }
-//
-//    private void startGameThread() {
-//        gameThread = new Thread(this);
-//        gameThread.start();
-//    }
-//
-//    private void setup() {
-//        for (int i = 0; i < 10; i++) {
-//            entities.add(new Zombie((int) (Math.random() * 10) * TILESIZE, (int) (Math.random() * 10) * TILESIZE));
-//        }
-//        entities.add(Player.getInstance());
-//    }
-//
-//    @Override
-//    public void run() {
-//        double delay = 1000000000.0 / FPS;
-//        double nextStopTime = System.nanoTime() + delay;
-//
-//        while (gameThread != null) {
-//            update();
-//            repaint();
-//
-//            try {
-//                double remainingTime = nextStopTime - System.nanoTime();
-//                if (remainingTime > 0) {
-//                    Thread.sleep((long) (remainingTime / 1000000));
-//                }
-//
-//                nextStopTime += delay;
-//            } catch (InterruptedException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//    }
-//
-//    public void update() {
-//        switch (GAMESTATE) {
-//            case play:
-//                // Submit update tasks for entities to the executor
-//                for (Entity entity : entities) {
-//                    updateExecutor.submit(() -> entity.update());
-//                }
-//                // Handle collision detection and other game logic
-//                CollisionManager.getInstance().update();
-//
-//                // Player dies
-//                if (Player.getInstance().getHealth() <= 0) {
-//                    System.exit(0);
-//                }
-//
-//                for (Entity e : entities) {
-//                    e.execute();
-//                }
-//
-//                Iterator<Entity> iterator = entities.iterator();
-//                while (iterator.hasNext()) {
-//                    Entity e = iterator.next();
-//                    if (e.getHealth() <= 0) {
-//                        e.dropLoot();
-//                        iterator.remove();
-//                    }
-//                }
-//                break;
-//            case inventory:
-//                InventoryHandler.getInstance().update();
-//                break;
-//            case pause:
-//                PauseHandler.getInstance().update();
-//                break;
-//        }
-//    }
-//
-//    @Override
-//    public void paintComponent(Graphics g) {
-//        super.paintComponent(g);
-//
-//        Graphics2D g2 = (Graphics2D) g;
-//
-//        switch (GAMESTATE) {
-//            case play:
-//                renderBackground(g2);
-//                ui.draw(g2);
-//                g2.dispose();
-//                break;
-//            case pause:
-//                if (GAME_SNAPSHOT == null) {
-//                    takeSnapshot();
-//                }
-//                g2.drawImage(GAME_SNAPSHOT, 0, 0, null);
-//                ui.drawPause(g2);
-//                g2.dispose();
-//                break;
-//            case inventory:
-//                if (GAME_SNAPSHOT == null) {
-//                    takeSnapshot();
-//                }
-//                g2.drawImage(GAME_SNAPSHOT, 0, 0, null);
-//                ui.drawInventory(g2);
-//                g2.dispose();
-//                break;
-//        }
-//    }
-//
-//    public static ArrayList<Entity> getEntities() {
-//        return entities;
-//    }
-//
-//    public static ArrayList<Item> getDroppedItems() {
-//        return droppedItems;
-//    }
-//
-//    private void renderBackground(Graphics2D g2) {
-//        // Render background and other game elements
-//        Tiles.getInstance().draw(g2);
-//
-//        if (droppedItems != null) { // Ensure droppedItems is not null
-//            for (Item item : droppedItems) {
-//                item.draw(g2);
-//            }
-//        }
-//
-//        if (entities != null) { // Ensure entities is not null
-//            for (Entity entity : entities) {
-//                entity.draw(g2);
-//            }
-//        }
-//    }
-//
-//    private void takeSnapshot() {
-//        // Create a snapshot of the current game state for pause/inventory screens
-//        GAME_SNAPSHOT = new BufferedImage(SCREEN_WIDTH, SCREEN_HEIGHT, BufferedImage.TYPE_INT_ARGB);
-//        Graphics2D g2 = GAME_SNAPSHOT.createGraphics();
-//        renderBackground(g2);
-//        g2.dispose();
-//    }
-//
-//    @Override
-//    public void addNotify() {
-//        super.addNotify();
-//        requestFocus();
-//    }
-//
-//    public void dispose() {
-//        if (updateExecutor != null) {
-//            updateExecutor.shutdown(); // Shutdown executor service
-//        }
-//        if (gameThread != null) {
-//            gameThread.interrupt(); // Interrupt game thread if it's running
-//            gameThread = null; // Clear reference
-//        }
-//    }
-//}
-

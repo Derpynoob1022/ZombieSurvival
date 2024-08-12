@@ -2,13 +2,14 @@ package ui;
 
 import model.Entities.Player;
 import model.Handler.*;
-import model.Items.Item;
-import model.Slot;
+import model.Handler.StateHandler.*;
+import model.Helper;
+import model.Inventory.InventoryHandler;
+import model.Inventory.Stack;
+import model.Inventory.Slot;
 
-import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 
 import static ui.GamePanel.*;
 
@@ -19,35 +20,37 @@ public class Ui {
     private BufferedImage hotbarBackground;
     private BufferedImage hotbarBackgroundSelected;
     private BufferedImage coin;
-    public static Font arial_80 = new Font("Arial", Font.BOLD, 80);
+    public static Font arial_80 = new Font("Arial", Font.BOLD, 80); // Instantiating new fonts
     public static Font arial_30 = new Font("Arial", Font.PLAIN, 30);
 
     public Ui() {
-        heart_empty = setup("/objects/heart_empty", TILESIZE, TILESIZE);
-        heart_half = setup("/objects/heart_half", TILESIZE, TILESIZE);
-        heart_full = setup("/objects/heart_full", TILESIZE, TILESIZE);
-        hotbarBackground = setup("/background/hotbar", TILESIZE, TILESIZE);
-        hotbarBackgroundSelected = setup("/background/highlightedHotbar", TILESIZE + 14, TILESIZE + 14);
-        coin = setup("/objects/coin", TILESIZE / 4, TILESIZE / 4);
+        // Setting up all the sprites
+        heart_empty = Helper.setup("objects/heart_empty", TILESIZE, TILESIZE);
+        heart_half = Helper.setup("objects/heart_half", TILESIZE, TILESIZE);
+        heart_full = Helper.setup("objects/heart_full", TILESIZE, TILESIZE);
+        hotbarBackground = Helper.setup("background/hotbar", TILESIZE, TILESIZE);
+        hotbarBackgroundSelected = Helper.setup("background/highlightedHotbar", TILESIZE + 14, TILESIZE + 14);
+        coin = Helper.setup("objects/gold_coin", TILESIZE / 4, TILESIZE / 4);
     }
 
     public void draw(Graphics2D g2) {
+        // Initialize the x and y
         int x = SCREEN_WIDTH - TILESIZE * 3 / 2;
         int y = TILESIZE / 2;
         int i = 0;
 
-        //draw blank hearts
+        // Draw blank hearts
         while (i < Player.getInstance().getMaxHealth() / 2) {
             g2.drawImage(heart_empty, x, y, null);
             i++;
             x -= TILESIZE;
         }
 
-        //reset
+        // Reset the x value
         x += TILESIZE;
         i = 0;
 
-        //draw current health
+        // Draw current health of the player from left to right
         while (i < Player.getInstance().getHealth()) {
             g2.drawImage(heart_half, x, y, null);
             i++;
@@ -58,33 +61,37 @@ public class Ui {
             x += TILESIZE;
         }
 
+        // Reset x
         x = TILESIZE / 2;
 
-        // drawing hotbar background
+        // Drawing hotbar background
         for (i = 0; i < 8; i++) {
             g2.drawImage(hotbarBackground, x, y, null);
             x += TILESIZE;
         }
 
-        // draw highlighted background
+        // Draw selected hotbar slot background
         x = TILESIZE / 2 + (KeyHandler.getInstance().getLastNumberKeyPressed() - 1) * TILESIZE - 7;
         y = TILESIZE / 2 - 7;
         g2.drawImage(hotbarBackgroundSelected, x, y, null);
 
 
+        // Reset x and y and change colour
         g2.setColor(Color.red);
         x = TILESIZE / 2 + 5;
         y = TILESIZE / 2 + 15;
-        // drawing number on the hotbar
+
+        // Drawing number for each slot of the hotbar
         for (i = 0; i < 8; i++) {
             g2.drawString(Integer.toString(i + 1), x, y);
             x += TILESIZE;
         }
 
-        // reset x
+        // Reset x and y
         x = TILESIZE / 2;
         y = TILESIZE / 2;
-        // drawing the items in the hotbar
+
+        // Drawing the items in the hotbar
         for (i = 0; i < 8; i++) {
             Slot slot = Player.getInstance().getInventory()[i];
             if (slot != null && slot.getItem() != null) {
@@ -93,131 +100,103 @@ public class Ui {
                 int centeringX = (TILESIZE - slotImage.getWidth()) / 2;
                 int centeringY = (TILESIZE - slotImage.getHeight()) / 2;
                 g2.drawImage(slotImage, x + centeringX, y + centeringY, null);
+                // If the item is a stack of something, it will display the count of the stack
+                if (slot.getItem() instanceof Stack) {
+                    if (((Stack) slot.getItem()).getCount() > 1) {
+                        g2.drawString(Integer.toString(((Stack)slot.getItem()).getCount()), x + TILESIZE - 20, y + TILESIZE - 20);
+                    }
+                }
             }
             x += TILESIZE;
         }
 
+        // Drawing the player's coin count
         x = TILESIZE / 2;
         y = TILESIZE * 2;
-
         g2.drawImage(coin, x, y, null);
-
         g2.setColor(Color.GREEN);
         x += TILESIZE / 2;
         y += TILESIZE / 5;
         String text = "Coins: " + Player.getInstance().getCoin();
         g2.drawString(text, x, y);
 
+        // Drawing the current level number
+        x = TILESIZE;
+        y = TILESIZE * 3;
+        text = "Wave: " + LevelHandler.getInstance().getWave();
+        g2.drawString(text, x, y);
+
+        // Drawing the current player level
+        y += TILESIZE;
+        text = "Level: " + Player.getInstance().getLevel();
+        g2.drawString(text, x, y);
+
+        // Drawing the current player xp count
+        x += TILESIZE;
+        text = "Xp: " + Player.getInstance().getXp();
+        g2.drawString(text, x, y);
     }
 
     public void drawInventory(Graphics2D g2) {
-        g2.setColor(Color.darkGray);
-        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,0.9f));
-        g2.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,1));
-
-        int x;
-        int y = SCREEN_HEIGHT / 2 + TILESIZE * 2;
-
-        // drawing inventory background
-        for (int g = 0; g < 4; g++) {
-            x = SCREEN_WIDTH / 2 - TILESIZE * 4;
-            for (int i = 0; i < 8; i++) {
-                g2.drawImage(hotbarBackground, x, y, null);
-                x += TILESIZE;
-            }
-            y -= TILESIZE;
-        }
-
-        y = SCREEN_HEIGHT / 2 + TILESIZE * 2;
-
-        for (int g = 0; g < 4; g++) {  // 4 rows
-            x = SCREEN_WIDTH / 2 - TILESIZE * 4;  // Reset x for each row
-            for (int i = 0; i < 8; i++) {  // 8 columns
-                Slot slot = Player.getInstance().getInventory()[g * 8 + i];
-                if (slot != null && slot.getItem() != null) {
-                    BufferedImage slotImage = slot.getItem().getImage();
-                    // Centering the image
-                    int centeringX = (TILESIZE - slotImage.getWidth()) / 2;
-                    int centeringY = (TILESIZE - slotImage.getHeight()) / 2;
-                    g2.drawImage(slotImage, x + centeringX, y + centeringY, null);
-                }
-                x += TILESIZE;
-            }
-            y -= TILESIZE;
-        }
-
-        if (InventoryHandler.getInstance().getGrabbedItem()) {
-            int mouseX = (int) MouseHandler.getInstance().getX();
-            int mouseY = (int) MouseHandler.getInstance().getY();
-            Item item = InventoryHandler.getInstance().getSelectedItem();
-            int centeringX = item.getImage().getWidth() / 2;
-            int centeringY = item.getImage().getHeight() / 2;
-            g2.drawImage(item.getImage(), mouseX - centeringX, mouseY - centeringY, null);
-        }
+        InventoryHandler.getInstance().draw(g2);
     }
 
     public void drawPause(Graphics2D g2){
+        // Draws a semi transparent layer
         g2.setColor(Color.darkGray);
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,0.9f));
         g2.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-        PauseHandler.getInstance().draw(g2);
+
+        // Draws the pause screen
         g2.setFont(arial_80);
         g2.setColor(Color.white);
         String text = "Paused";
         g2.drawString(text, getXforCenteredText(g2, text), 200);
+
+        // Draws the intractable ui components
+        PauseHandler.getInstance().draw(g2);
     }
 
-    // TODO: implement those 2 methods
     public void drawSettings(Graphics2D g2) {
+        // Draws the intractable ui components
         SettingsHandler.getInstance().draw(g2);
     }
 
     public void drawTitle(Graphics2D g2) {
+        // Draws the title
         g2.setColor(Color.white);
         g2.setFont(arial_80);
         String text = "Zombie Game";
         g2.drawString(text, getXforCenteredText(g2, text), 200);
+
+        // Draws the intractable ui components
         TitleHandler.getInstance().draw(g2);
     }
 
-    public BufferedImage setup(String imagePath, int width, int height) {
-        BufferedImage image = null;
+    public void drawControl(Graphics2D g2) {
+        g2.setColor(Color.white);
+        g2.setFont(arial_80);
+        String text = "Key binds";
+        g2.drawString(text, getXforCenteredText(g2, text), 200);
 
-        try {
-            image = ImageIO.read(getClass().getResourceAsStream(imagePath + ".png"));
-            image = Helper.scaleImage(image, width, height);
+        // Draws the intractable ui components
+        ControlHandler.getInstance().draw(g2);
+    }
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return image;
+    public void drawDeath(Graphics2D g2) {
+        g2.setColor(Color.RED);
+        g2.setFont(arial_80);
+        String text = "You Died";
+        g2.drawString(text, getXforCenteredText(g2, text), 200);
+
+        // Draws the intractable ui components
+        DeathHandler.getInstance().draw(g2);
     }
 
     public int getXforCenteredText(Graphics2D g2, String text){
-
+        // Helper method to get the center x for the text
         int length = (int)g2.getFontMetrics().getStringBounds(text, g2).getWidth();
         int x = SCREEN_WIDTH/2 - length/2;
         return x;
-    }
-
-    public BufferedImage getHeart_empty() {
-        return heart_empty;
-    }
-
-    public BufferedImage getHeart_half() {
-        return heart_half;
-    }
-
-    public BufferedImage getHeart_full() {
-        return heart_full;
-    }
-
-    public BufferedImage getHotbarBackground() {
-        return hotbarBackground;
-    }
-
-    public BufferedImage getHotbarBackgroundSelected() {
-        return hotbarBackgroundSelected;
     }
 }
